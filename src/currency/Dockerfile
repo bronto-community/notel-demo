@@ -17,23 +17,12 @@
 FROM docker.io/library/alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6 AS base
 
 RUN apk update && \
-    apk add grpc-dev protobuf-dev
+    apk add grpc-dev protobuf-dev && \
+    rm -f /usr/lib/pkgconfig/grpcpp_otel_plugin.pc
 
 FROM base AS builder
 
-RUN apk add git cmake make g++ linux-headers
-
-ARG OPENTELEMETRY_CPP_VERSION
-
-RUN git clone --depth 1 --branch v${OPENTELEMETRY_CPP_VERSION} https://github.com/open-telemetry/opentelemetry-cpp \
-    && cd opentelemetry-cpp/ \
-    && mkdir build \
-    && cd build \
-    && cmake .. -DCMAKE_CXX_STANDARD=17 -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-          -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF \
-          -DWITH_BENCHMARK=OFF -DWITH_FUNC_TESTS=OFF \
-          -DWITH_EXAMPLES=OFF -DWITH_OTLP_GRPC=ON \
-    && make -j$(nproc || sysctl -n hw.ncpu || echo 1) install && cd ../..
+RUN apk add cmake make g++ linux-headers
 
 WORKDIR /currency
 
@@ -52,7 +41,7 @@ RUN mkdir -p build && cd build \
 
 FROM base AS release
 
-COPY --from=builder /usr/local /usr/local
+COPY --from=builder /usr/local/bin/currency /usr/local/bin/currency
 
 ARG CURRENCY_PORT=7001
 EXPOSE ${CURRENCY_PORT}
