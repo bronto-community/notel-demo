@@ -53,6 +53,18 @@
   errors. tsc is not part of the image build (only lint).
 - The lockfile is generated with npm 11/12 (see android.Dockerfile comment);
   regenerate with npm >= 11, not the npm 10 shipped in `node:22`.
+- Re-adding `@types/node` with `npm install -D @types/node@^26.5.0` saves
+  `^<locked version>` (e.g. `^26.6.4`), not the spec you typed. Keep the
+  approved `^26.5.0` in package.json, then run `npm install --package-lock-only`
+  to sync the lockfile root entry.
+- At upstream 7ea09b86, the lockfile from #4059 also holds
+  `expo/node_modules/react-native-worklets@0.10.4` and
+  `expo/node_modules/semver@7.8.5`, which come in through an optional peer of
+  the nested `expo-modules-core`. npm 11 and npm 12 both prune them on any
+  re-lock, even of upstream's unchanged files. `npm ci` never installs them,
+  even when they are kept, so the installed tree matches upstream's minus
+  OTel. npm's output was kept. `npm ls` reports
+  `react-native-worklets@0.13.0 invalid` in upstream too.
 - app.json `io.opentelemetry.reactnativeapp` bundle/package id and the UI text
   "OpenTelemetry demo" are branding and stay.
 
