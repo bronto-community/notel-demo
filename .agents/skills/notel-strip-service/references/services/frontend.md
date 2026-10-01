@@ -30,7 +30,8 @@
   in `dev` (`NODE_OPTIONS`) and `start`.
 - `package-lock.json`: regenerated with `npm uninstall --package-lock-only`
   in `node:25.9.0-slim` (Dockerfile version). No remaining package changed
-  version (810 -> 659 entries).
+  version (810 -> 659 entries; 797 -> 646 at upstream 7ea09b86). Packages
+  left only under devDependencies gain `"dev": true`; that is expected.
 - `Dockerfile`: COPY of `Instrumentation.js`, `CMD` is now `["server.js"]`,
   the `utils/telemetry/` COPY is replaced by COPYs of `utils/logger.ts` and
   `utils/ApiLogMiddleware.ts`.
@@ -71,5 +72,9 @@
 - `docker build --load --target builder -f src/frontend/Dockerfile -t fe-b .`
   then `docker run --rm fe-b npx tsc --noEmit` and
   `docker run --rm fe-b sh -c 'npm ls --all | grep -i opentelemetry'`.
-- Run the image with `-e PORT=8080`, request `/api/currency`, and check that
-  the `API request completed/failed` log line appears.
+- Run the image with `-e PORT=8080 -e HOSTNAME=0.0.0.0`, request
+  `/api/currency`, and check that the `API request completed/failed` log line
+  appears. Without `HOSTNAME=0.0.0.0` the standalone server binds only to the
+  container hostname, so a request to `127.0.0.1` from `docker exec` fails.
+  The distroless image has no shell or curl; use
+  `docker exec <c> /nodejs/bin/node -e "fetch('http://127.0.0.1:8080/api/currency')"`.
