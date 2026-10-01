@@ -31,9 +31,14 @@
 
 ## Traps
 
-- `bundle lock` with the image's bundler rewrites `BUNDLED WITH` from 2.6.7 to
-  4.0.10. Restore `2.6.7` (three spaces) so the lockfile diff stays
-  deletions only.
+- `BUNDLED WITH` must match upstream's lockfile. Up to 650354ba upstream had
+  `2.6.7` and `bundle lock` rewrote it to `4.0.10`, which had to be
+  reverted. Since #4059 upstream itself has `4.0.10` (two spaces) and a
+  `CHECKSUMS` section, so `bundle lock` in the image leaves both as they are.
+  Always compare the line against upstream's lock.
+- On a sync, the cherry-pick of the previous strip conflicts whenever upstream
+  touched `Gemfile.lock`. Take upstream's lock and rerun `bundle lock`; the
+  result is deletions only (OTel gems, their dependency lines and checksums).
 - `googleapis-common-protos-types` and `logger` stay in the lock because grpc
   (through the flagd provider), mail, sinatra and rack-protection need them.
   Keep `google-protobuf`.
