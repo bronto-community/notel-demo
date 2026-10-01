@@ -27,6 +27,10 @@ python3 notel/scripts/strip_infra.py --check   # report pending changes only
 - The plain nginx base image digest is resolved with
   `docker buildx imagetools inspect`. Use `--nginx-digest sha256:...` to pin
   a known digest, or `--nginx-digest none` to drop the pin.
+- CI is adapted to bronto (`adapt_ci`): only `release.yml` pushes images,
+  tagged from the `notel/<sha>` release tag, `nightly-release.yml` is
+  deleted, and Scorecard and zizmor run as local jobs with the permissions an
+  internal repository needs. The script fails if any other workflow pushes.
 - When it finishes, it runs `check_residuals.py` on its own scope and exits 1
   if anything is left.
 

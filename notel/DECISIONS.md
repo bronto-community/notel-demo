@@ -97,7 +97,10 @@ maintainer. Do not decide on your own.
   based on the OpenTelemetry Demo (Source Code)", which links both
   bronto-community/notel-demo and the upstream repo. Both are applied by `strip_infra.py`
   (`strip_branding`). The logo keeps its upstream filename, so no frontend
-  code changes. Page titles and the theme stay unchanged. If upstream
+  code changes. Page titles read "Notel Demo - <page>" instead of
+  "Otel Demo - <page>", and the react-native empty-state text says "notel
+  demo". The theme and "Astronomy Shop", the shop's own name, stay
+  unchanged. If upstream
   changes the logo, regenerate the asset with `make_logo.py`.
 - **README**: upstream `README.md` moves to `README.original.md` (with the
   usual infra edits), and the notel README from `notel/assets/README.md`
@@ -108,6 +111,13 @@ maintainer. Do not decide on your own.
   telemetry tests, Weaver, matrix entries for deleted images). Keep the rest.
   Image pushes go only to `ghcr.io/bronto-community/notel-demo`, with no
   Docker Hub target.
+- **Image publishing** (2026-10-01): images are pushed only when a notel
+  release (`notel/<upstream-short-sha>`) is published, by `release.yml`, with
+  the tags `notel-<upstream-short-sha>-<service>` and `latest-<service>`.
+  Nothing is pushed nightly or from `main`: `nightly-release.yml` is deleted
+  and Checks builds without pushing. Workflows that call
+  `open-telemetry/shared-workflows` but cannot work in an internal repository
+  (Scorecard, zizmor) are fixed for bronto rather than deleted.
 - **Envoy access log**: replace the OTel access logger with
   `envoy.access_loggers.stdout`, using the same format.
 - **Makefile**: `start` and `start-minimal` replace the old `*-no-o11y`

@@ -39,6 +39,12 @@ DELETE_PATHS = [
     ".github/workflows/run-agentic-telemetry-tests.yml",
 ]
 
+# Upstream files notel removes that are not observability components. They do
+# not count towards strict mode, but must exist on a strict (fresh) tree.
+NOTEL_DELETE_PATHS = [
+    ".github/workflows/nightly-release.yml",
+]
+
 DELETED_COMPONENTS = [
     "otel-collector",
     "jaeger",
@@ -1099,8 +1105,7 @@ def strip_registry(ctx):
     docker_secrets = {"DOCKER_USERNAME", "DOCKER_PASSWORD"}
     for wf, paths in ((rel, [["on", "workflow_call", "secrets"]]),
                       (".github/workflows/checks.yml", None),
-                      (".github/workflows/release.yml", None),
-                      (".github/workflows/nightly-release.yml", None)):
+                      (".github/workflows/release.yml", None)):
         lines = ctx.lines(wf)
         if paths is None:
             jobs = find_path(lines, ["jobs"])
@@ -1117,6 +1122,232 @@ def strip_registry(ctx):
     # The upstream image name in the Makefile clean-images filter.
     sub_lines(ctx, "Makefile", re.compile(r'reference="ghcr\.io/open-telemetry/demo:'),
               f'reference="{NEW_IMAGE_NAME}:', "clean-images filter uses notel image name")
+
+
+# Pins for actions that only the notel versions of the Scorecard and zizmor
+# workflows use. actions/checkout and github/codeql-action are taken from the
+# tree, so they follow upstream bumps.
+SCORECARD_ACTION = "ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc  # v2.4.4"
+ZIZMOR_ACTION = "zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482  # v0.6.4"
+
+RELEASE_VERSION_JOB = """jobs:
+  version:
+    name: Derive image version
+    if: ${{ !github.event.repository.fork }}
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Derive image version from the release tag
+        id: version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          # Accept only notel/<upstream short sha>, for example notel/650354ba.
+          if [[ ! "${TAG}" =~ ^notel/[0-9a-f]{7,40}$ ]]; then
+            echo "::error::Release tag '${TAG}' is not notel/<upstream-short-sha>"
+            exit 1
+          fi
+          echo "version=notel-${TAG#notel/}" >> "${GITHUB_OUTPUT}"
+
+  build_and_push_images:
+    needs: version
+"""
+
+SCORECARD_JOBS = """jobs:
+  analysis:
+    name: OSSF Scorecard analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read  # for Scorecard and the SARIF upload on a non-public repository
+      checks: read  # for Scorecard on a non-public repository
+      contents: read  # for actions/checkout
+      issues: read  # for Scorecard on a non-public repository
+      pull-requests: read  # for Scorecard on a non-public repository
+      security-events: write  # for the SARIF upload to code scanning
+    steps:
+      - name: Checkout code
+        uses: @@CHECKOUT@@
+        with:
+          persist-credentials: false
+
+      - name: Run Scorecard
+        uses: @@SCORECARD@@
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          # api.scorecard.dev only accepts results for public repositories.
+          publish_results: false
+
+      - name: Keep only the checks that report findings
+        env:
+          INCLUDED_CHECKS: |
+            BinaryArtifactsID
+            DangerousWorkflowID
+            PinnedDependenciesID
+            TokenPermissionsID
+        run: |
+          set -euo pipefail
+          # Scorecard reports `uses: $/...` self-repository references as unpinned:
+          # https://github.com/ossf/scorecard/issues/5232
+          # The regex matches a snippet line that starts with `$/` after optional spaces.
+          jq --arg included "$INCLUDED_CHECKS" '
+            def self_repository_reference:
+              ((.ruleId // "") == "PinnedDependenciesID")
+              and any(
+                .locations[]?;
+                ((.physicalLocation.region.snippet.text // "") | any(split("\\n")[]; test("^\\\\s*\\\\$/")))
+              );
+            ($included | split("\\n") | map(select(length > 0))) as $keep
+            | .runs |= map(
+                .results = (
+                  (.results // [])
+                  | map(select(
+                      ((.ruleId // "") | IN($keep[]))
+                      and (self_repository_reference | not)
+                    ))
+                )
+              )
+          ' results.sarif > filtered.sarif
+
+      - name: Upload to code scanning
+        uses: @@UPLOAD_SARIF@@
+        with:
+          sarif_file: filtered.sarif
+"""
+
+ZIZMOR_JOBS = """jobs:
+  zizmor:
+    name: Zizmor security analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read  # for the SARIF upload on a non-public repository
+      contents: read  # for actions/checkout
+      security-events: write  # for zizmor to upload SARIF results
+    steps:
+      - name: Checkout code
+        uses: @@CHECKOUT@@
+        with:
+          persist-credentials: false
+
+      - name: Run zizmor
+        uses: @@ZIZMOR@@
+        with:
+          persona: pedantic
+"""
+
+
+def tree_pin(ctx, rel, regex, what):
+    m = re.search(regex, ctx.text(rel), re.M)
+    if not m:
+        ctx.errors.append(f"{rel}: pin not found: {what}")
+        return "MISSING"
+    return m.group(1)
+
+
+def replace_jobs(ctx, rel, shared_re, notel_key, template):
+    """Swap an open-telemetry/shared-workflows call for the notel jobs block."""
+    lines = ctx.lines(rel)
+    jobs = find_path(lines, ["jobs"])
+    if jobs is None:
+        ctx.errors.append(f"{rel}: jobs block not found")
+        return
+    end = node_end(lines, jobs)
+    current = lines[jobs:end]
+    is_shared = any(shared_re.search(s) for s in current)
+    is_notel = find_path(lines, ["jobs", notel_key]) is not None and not is_shared
+    if not (is_shared or is_notel):
+        ctx.errors.append(f"{rel}: jobs block is neither the shared workflow call nor the notel job")
+        return
+    new = template.rstrip("\n").split("\n")
+    if current != new:
+        lines[jobs:end] = new
+        ctx.expect(rel, 1, f"set notel {notel_key} job")
+
+
+def adapt_ci(ctx):
+    """Adapt the upstream CI to bronto-community/notel-demo.
+
+    Images are pushed only by release.yml (a published notel/<sha> release),
+    and workflows that only work for public open-telemetry repositories get
+    the permissions an internal repository needs.
+    """
+    rel = ".github/workflows/release.yml"
+    replace_text(ctx, rel, "jobs:\n  build_and_push_images:\n", RELEASE_VERSION_JOB,
+                 "release version job")
+    replace_text(ctx, rel, "      version: ${{ github.event.release.tag_name }}",
+                 "      version: ${{ needs.version.outputs.version }}",
+                 "release image version from the version job")
+    if "version: ${{ needs.version.outputs.version }}" not in ctx.text(rel):
+        ctx.errors.append(f"{rel}: image version is not derived from the release tag")
+
+    replace_text(ctx, rel, "permissions:\n  contents: read\n\njobs:",
+                 "permissions:\n  contents: read\n\n"
+                 "concurrency:\n  group: ${{ github.workflow }}-${{ github.ref }}\n"
+                 "  cancel-in-progress: false\n\njobs:",
+                 "release concurrency")
+
+    rel = ".github/workflows/checks.yml"
+    replace_text(ctx, rel, "      push: ${{ github.event_name == 'push' }}\n",
+                 "      push: false\n", "Checks never pushes images")
+
+    # Every caller of the image build may push only from release.yml.
+    for wf in sorted((ctx.root / ".github/workflows").glob("*.y*ml")):
+        r = wf.relative_to(ctx.root).as_posix()
+        if r in NOTEL_DELETE_PATHS:
+            continue
+        if "/.github/workflows/component-build-images.yml" not in ctx.text(r):
+            continue
+        for s in ctx.lines(r):
+            # A `push:` input of a reusable workflow call with a value.
+            m = re.match(r"^      push:\s*(\S.*)$", s)
+            if m and r != ".github/workflows/release.yml" and m.group(1) != "false":
+                ctx.errors.append(f"{r}: pushes images outside release.yml: {s.strip()}")
+
+    rel = ".github/workflows/assign-reviewers.yml"
+    replace_text(ctx, rel,
+                 "    permissions:\n"
+                 "      pull-requests: write  # required for assigning reviewers to PRs\n",
+                 "    permissions:\n"
+                 "      contents: read  # required to read .github/component_owners.yml\n"
+                 "      pull-requests: write  # required for assigning reviewers to PRs\n",
+                 "assign-reviewers contents read")
+
+    rel = ".github/workflows/fossa.yml"
+    # The upstream FOSSA team of the open-telemetry organization.
+    n = remove_lines(ctx.lines(rel), re.compile(r"^\s+team:\s*OpenTelemetry\s*$"))
+    ctx.expect(rel, n, "removed OpenTelemetry FOSSA team")
+
+    # A pinned `actions/checkout` reference with its version comment.
+    checkout = tree_pin(ctx, ".github/workflows/checks.yml",
+                        r"uses:\s*(actions/checkout@[0-9a-f]{40}\s+#\s*\S+)", "actions/checkout")
+    # A pinned github/codeql-action sha and its version comment.
+    codeql = re.search(r"github/codeql-action/analyze@([0-9a-f]{40})\s+#\s*(\S+)",
+                       ctx.text(".github/workflows/codeql-analysis.yml"))
+    if codeql:
+        upload = f"github/codeql-action/upload-sarif@{codeql.group(1)}  # {codeql.group(2)}"
+    else:
+        ctx.errors.append(".github/workflows/codeql-analysis.yml: pin not found: github/codeql-action")
+        upload = "MISSING"
+    checkout = re.sub(r"\s+#\s*", "  # ", checkout)
+
+    def fill(t):
+        return (t.replace("@@CHECKOUT@@", checkout).replace("@@UPLOAD_SARIF@@", upload)
+                .replace("@@SCORECARD@@", SCORECARD_ACTION).replace("@@ZIZMOR@@", ZIZMOR_ACTION))
+
+    # A call of an open-telemetry shared reusable workflow by name.
+    replace_jobs(ctx, ".github/workflows/ossf-scorecard.yml",
+                 re.compile(r"uses:\s*open-telemetry/shared-workflows/\.github/workflows/scorecard\.yml@"),
+                 "analysis", fill(SCORECARD_JOBS))
+    replace_text(ctx, ".github/workflows/zizmor.yml", "permissions: {}\n\njobs:",
+                 "permissions: {}\n\n"
+                 "concurrency:\n"
+                 "  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}\n"
+                 "  cancel-in-progress: true\n\njobs:",
+                 "zizmor concurrency")
+    replace_jobs(ctx, ".github/workflows/zizmor.yml",
+                 re.compile(r"uses:\s*open-telemetry/shared-workflows/\.github/workflows/zizmor\.yml@"),
+                 "zizmor", fill(ZIZMOR_JOBS))
 
 
 # --------------------------------------------------------------------------
@@ -1239,9 +1470,29 @@ FOOTER_NEW = ('@ {currentYear} notel-demo (<a href="https://github.com/bronto-co
               '(<a href="https://github.com/open-telemetry/opentelemetry-demo">Source Code</a>)')
 
 
+# Matches the "<title>Otel Demo - <page>" prefix of every frontend page title.
+TITLE_RE = re.compile(r"<title>Otel Demo - ")
+RN_EMPTY_OLD = "            OpenTelemetry demo are running"
+RN_EMPTY_NEW = "            notel demo are running"
+
+
 def strip_branding(ctx):
     replace_text(ctx, "src/frontend/components/Footer/Footer.tsx", FOOTER_OLD, FOOTER_NEW,
                  "footer credits notel-demo")
+    pages = sorted(p.relative_to(ctx.root).as_posix() for p in (ctx.root / "src/frontend/pages").rglob("*.tsx"))
+    renamed = 0
+    for rel in pages:
+        if "<title>" not in (ctx.root / rel).read_text(encoding="utf-8"):
+            continue
+        lines = ctx.lines(rel)
+        for i, s in enumerate(lines):
+            new = TITLE_RE.sub("<title>Notel Demo - ", s)
+            if new != s:
+                lines[i] = new
+                renamed += 1
+    ctx.expect("src/frontend/pages", renamed, "page titles renamed to Notel Demo")
+    replace_text(ctx, "src/react-native-app/app/(tabs)/index.tsx", RN_EMPTY_OLD, RN_EMPTY_NEW,
+                 "react-native empty-state text names notel demo")
 
 
 def pending_assets(root):
@@ -1280,6 +1531,7 @@ def run(root, digest_mode, check_only):
         strip_postgres(ctx)
         strip_github(ctx)
         strip_registry(ctx)
+        adapt_ci(ctx)
         strip_docs(ctx)
         strip_branding(ctx)
         assets = pending_assets(root)
@@ -1289,7 +1541,11 @@ def run(root, digest_mode, check_only):
         readme_op = None
         ctx.errors.append(str(e))
 
-    deletions = [p for p in DELETE_PATHS if (root / p).exists() or (root / p).is_symlink()]
+    for p in NOTEL_DELETE_PATHS:
+        if strict and not (root / p).exists():
+            ctx.errors.append(f"{p}: expected file to delete not found")
+    deletions = [p for p in DELETE_PATHS + NOTEL_DELETE_PATHS
+                 if (root / p).exists() or (root / p).is_symlink()]
     print(f"mode: {'fresh upstream tree (strict)' if strict else 'already stripped (idempotent)'}")
     for p in deletions:
         print(f"delete: {p}")

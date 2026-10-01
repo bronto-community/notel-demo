@@ -9,8 +9,32 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  version:
+    name: Derive image version
+    if: ${{ !github.event.repository.fork }}
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Derive image version from the release tag
+        id: version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          # Accept only notel/<upstream short sha>, for example notel/650354ba.
+          if [[ ! "${TAG}" =~ ^notel/[0-9a-f]{7,40}$ ]]; then
+            echo "::error::Release tag '${TAG}' is not notel/<upstream-short-sha>"
+            exit 1
+          fi
+          echo "version=notel-${TAG#notel/}" >> "${GITHUB_OUTPUT}"
+
   build_and_push_images:
+    needs: version
     permissions:  # required by the reusable workflow
       contents: read  # required by the component-build-images reusable workflow
       packages: write  # required to push built images to GHCR
@@ -19,4 +43,4 @@ jobs:
     with:
       push: true
       force_build: true
-      version: ${{ github.event.release.tag_name }}
+      version: ${{ needs.version.outputs.version }}

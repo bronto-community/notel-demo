@@ -9,7 +9,7 @@
 
 # --- Whole repository ---------------------------------------------------------
 * :: Copyright( \d{4})? The OpenTelemetry Authors :: upstream license header, must be kept
-* :: \bnotel\b :: name of this fork (notel-demo, notel/)
+* :: \b[Nn]otel\b :: name of this fork (notel-demo, notel/)
 * :: \b(oteldemo|Oteldemo|OtelDemo)\b :: protobuf package name and the namespaces/identifiers generated from it in every language (branding kept)
 
 AGENTS.md :: the OpenTelemetry Demo with all$ :: notel section describing the upstream project this fork is derived from
@@ -36,7 +36,6 @@ src/image-provider/static/opentelemetry-demo-logo.png :: opentelemetry-demo-logo
 
 # --- GitHub configuration -----------------------------------------------------
 .github/workflows/*.yml :: \buses: open-telemetry/shared-workflows/\S+ :: shared org workflows (scorecard, zizmor, first-time PR), not observability
-.github/workflows/fossa.yml :: team: OpenTelemetry$ :: FOSSA team name (organization)
 .github/CODEOWNERS :: @open-telemetry/demo-approvers :: upstream code owners team
 .github/security-insights.yml :: https?://[^\s)\]>"'`]+ :: links to upstream project metadata and security policy
 .github/security-insights.yml :: \bOpenTelemetry\b :: project and organization name in metadata (branding)
@@ -91,14 +90,12 @@ src/*/genproto/oteldemo/demo.pb.go :: \\(x[0-9a-f]{2}|b)oteldemo(?=\\) :: serial
 src/*/genproto/oteldemo/demo.pb.go :: genproto/oteldemob\\x06 :: serialized go_package option of the oteldemo proto package (generated code)
 src/recommendation/demo_pb2.py :: \\x[0-9a-f]{2}oteldemo(?=\\)|genproto/oteldemob(?=\\x) :: serialized descriptor of the oteldemo proto package (generated code)
 src/frontend/*.ts :: \botel(Blue|Yellow|Gray|Red)\b :: theme colour names (DECISIONS: Naming)
-src/frontend/*.tsx :: <title>Otel Demo - :: page titles (DECISIONS: Naming)
 src/frontend/components/Header/Header.styled.ts :: /images/opentelemetry-demo-logo\.png :: logo path (branding)
 src/frontend/components/Footer/Footer.tsx :: based on the OpenTelemetry Demo \(<a href="https://github\.com/open-telemetry/opentelemetry-demo"> :: notel footer credits the upstream project and links its source
 src/payment/index.js :: \botelDemoPackage\b :: variable holding the loaded oteldemo proto package
 src/payment/package.json :: "repository": "https://github\.com/opentelemetry/opentelemetry-demo" :: repository URL (branding)
 src/quote/composer.json :: part of OpenTelemetry Demo :: composer description (branding)
 src/react-native-app/app.json :: "io\.opentelemetry\.reactnativeapp" :: RN bundle id (DECISIONS: Naming)
-src/react-native-app/app/(tabs)/index.tsx :: ^\s*OpenTelemetry demo are running$ :: product name in UI text (branding)
 
 # --- Service code: dormant transitive dependencies ------------------------------
 src/checkout/go.mod :: ^\s+(connectrpc\.com/otelconnect|go\.opentelemetry\.io/(otel(/\S+)?|auto/sdk)) v\S+ // indirect$ :: dormant transitive, see DECISIONS.md

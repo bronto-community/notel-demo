@@ -21,6 +21,7 @@ jobs:
   assign-reviewers:
     name: Assign reviewers
     permissions:
+      contents: read  # required to read .github/component_owners.yml
       pull-requests: write  # required for assigning reviewers to PRs
     if: ${{ !github.event.repository.fork }}
     runs-on: ubuntu-latest
