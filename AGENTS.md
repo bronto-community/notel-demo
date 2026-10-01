@@ -4,6 +4,24 @@ This file is here to steer AI assisted PRs towards being high quality and valuab
 contributions that do not create excessive maintainer burden. It is inspired by
 the Open Policy Agent and Fedora projects policies.
 
+## notel-demo fork
+
+This repository is **notel-demo**: the OpenTelemetry Demo with all
+observability removed. It serves as a baseline for applying
+auto-instrumentation or agent-based instrumentation. It is regenerated from
+upstream on every sync.
+
+* Binding decisions: `notel/DECISIONS.md`. If a case is not covered there,
+  ask the maintainer instead of deciding.
+* Couplings and behavior changes: `notel/BREAKING.md`.
+* Skills, in the Agent Skills format under `.agents/skills/`:
+  * `notel-sync` regenerates the fork on top of a new upstream commit.
+  * `notel-strip-service` strips a single service.
+  * `notel-verify` builds, runs and checks the result, including the silence
+    check.
+* Deterministic scripts: `notel/scripts/`. Verification tooling:
+  `notel/verify/`.
+
 ## General Rules and Guidelines
 
 The most important rule is never to post AI-generated content on issues or PRs.

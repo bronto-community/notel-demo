@@ -1,0 +1,108 @@
+# Allowlist for check_residuals.py.
+#
+# Format: <path glob> :: <python regex> :: <reason>
+# A residual match is allowed only if an entry whose glob matches the file path
+# has a regex match on the same line that fully covers it. The glob `*` also
+# matches `/`. Path hits (a residual term in the file name) are checked
+# against the path string. Keep entries as narrow as possible and give every
+# entry a reason.
+
+# --- Whole repository ---------------------------------------------------------
+* :: Copyright( \d{4})? The OpenTelemetry Authors :: upstream license header, must be kept
+* :: \bnotel\b :: name of this fork (notel-demo, notel/)
+* :: \b(oteldemo|Oteldemo|OtelDemo)\b :: protobuf package name and the namespaces/identifiers generated from it in every language (branding kept)
+
+AGENTS.md :: the OpenTelemetry Demo with all$ :: notel section describing the upstream project this fork is derived from
+# --- Historical records -------------------------------------------------------
+CHANGELOG.md :: .* :: upstream history, intentionally untouched
+.chloggen/*.yaml :: .* :: upstream history, intentionally untouched
+
+# --- Compose, env, build ------------------------------------------------------
+compose.yaml :: ^\s+name: opentelemetry-demo$ :: docker network name, kept per DECISIONS
+.env.override :: TO opentelemetry/opentelemetry-demo$ :: upstream guard comment against pushing local overrides
+Makefile :: OpenTelemetry Demo :: product name in user-facing echo messages (branding)
+Makefile :: "The OpenTelemetry Authors" :: addlicense copyright holder for license headers
+Makefile :: go\.opentelemetry\.io/build-tools/chloggen :: changelog tooling module path, not observability
+Makefile :: Pinned to match the OpenTelemetry$ :: comment about the chloggen version pin (Collector release tooling)
+Makefile :: \botel-demo-builder\b :: docker buildx builder name
+package.json :: "name": "opentelemetry-demo" :: npm package name of the repo tooling (branding)
+internal/tools/go.mod :: ^module github\.com/open-telemetry/opentelemetry-specification/internal/tools$ :: Go module path of the lint tools, not observability
+.gitignore :: ^# Otel Demo specific$ :: section comment (branding)
+.yamlignore :: ^kubernetes/opentelemetry-demo\.yaml$ :: upstream ignore entry for the Helm-rendered manifest (branding)
+.markdownlint.yaml :: opentelemetry-collector's markdownlint config :: attribution of the lint config origin
+.lychee.toml :: \^https://hub\\\\\.docker\\\\\.com/r/otel/demo :: link-check exclusion for the upstream Docker Hub page
+.lychee.toml :: How-to-observe-Kubernetes-deployment-of-OpenTelemetry-demo-app :: link-check exclusion for a vendor page linked from README
+src/image-provider/static/opentelemetry-demo-logo.png :: opentelemetry-demo-logo :: UI logo asset, kept per DECISIONS (branding)
+
+# --- GitHub configuration -----------------------------------------------------
+.github/workflows/*.yml :: \buses: open-telemetry/shared-workflows/\S+ :: shared org workflows (scorecard, zizmor, first-time PR), not observability
+.github/workflows/fossa.yml :: team: OpenTelemetry$ :: FOSSA team name (organization)
+.github/CODEOWNERS :: @open-telemetry/demo-approvers :: upstream code owners team
+.github/security-insights.yml :: https?://[^\s)\]>"'`]+ :: links to upstream project metadata and security policy
+.github/security-insights.yml :: \bOpenTelemetry\b :: project and organization name in metadata (branding)
+.github/security-insights.yml :: ^\s+- name: opentelemetry-demo$ :: repository name in metadata
+.github/security-insights.yml :: security@opentelemetry\.io :: upstream security contact
+.github/security-insights.yml :: affiliation: AWS OpenSearch :: maintainer affiliation (person, not a backend)
+.github/ISSUE_TEMPLATE/*.md :: https?://[^\s)\]>"'`]+ :: links to upstream project, community and docs
+.github/ISSUE_TEMPLATE/feature_request.md :: \bOpenTelemetry client$ :: refers to upstream OpenTelemetry client libraries
+.github/ISSUE_TEMPLATE/feature_request.md :: ^opentelemetry-specification\] :: link text to the upstream specification repo
+.github/PULL_REQUEST_TEMPLATE.md :: https?://[^\s)\]>"'`]+ :: links to upstream docs and Helm charts
+.github/PULL_REQUEST_TEMPLATE.md :: the opentelemetry\.io repo :: upstream docs repository name
+.github/PULL_REQUEST_TEMPLATE.md :: @open-telemetry/demo-approvers :: upstream approvers team
+
+# --- Docs (README branding kept as-is per DECISIONS) --------------------------
+README.md :: https?://[^\s)\]>"'`]+ :: links to upstream project, docs, community and vendor forks
+README.md :: \bOpenTelemetry\b :: project name in README prose and title (branding)
+README.md :: alt="OTel logo" :: logo alt text (branding)
+README.md :: \[!\[OpenSSF Scorecard for opentelemetry-demo\] :: badge label naming the upstream repo
+README.md :: \[(Grafana Labs|OpenSearch|TelemetryHub)\] :: vendor names in the list of vendor forks
+README.md :: `#otel-community-demo` :: upstream Slack channel name
+README.md :: , AWS OpenSearch$ :: maintainer affiliation (person, not a backend)
+CONTRIBUTING.md :: https?://[^\s)\]>"'`]+ :: links to upstream project, community and tools
+CONTRIBUTING.md :: \bOpenTelemetry\b :: project and community name in contributor guide (branding)
+CONTRIBUTING.md :: \[otel-community-demo\] :: upstream Slack channel name
+CONTRIBUTING.md :: `?opentelemetry-demo`?/? :: repository and directory name in clone instructions
+CONTRIBUTING.md :: on the OTel website :: refers to the upstream docs website
+AGENTS.md :: Discussions on the OpenTelemetry$ :: upstream AI contribution policy, refers to the OpenTelemetry repositories
+
+# --- Service-owned infra and generated code ------------------------------------
+src/currency/Dockerfile :: grpcpp_otel_plugin\.pc :: removes a dangling pkg-config file of the Alpine grpc package
+src/currency/README.md :: ^of opentelemetry-demo$ :: repository name in build instructions
+src/currency/build/generated/proto/demo.pb.cc :: otel(d(e(m(o)?)?)?)? :: serialized descriptor of the oteldemo package, split across C string literals (tracked generated code)
+
+# --- Service code: branding and project identifiers (DECISIONS: Naming) --------
+src/*/README.md :: https://opentelemetry\.io/docs/demo/\S* :: links to the upstream demo docs
+src/*/README.md :: \bopentelemetry-demo\b :: repository name in build instructions
+src/*/README.md :: OpenTelemetry (Astronomy Shop|demo)\b :: product name (branding)
+src/chatbot/README.md :: the OpenTelemetry$ :: product name "OpenTelemetry Astronomy Shop" wrapped across lines (branding)
+src/frontend/README.md :: the OTEL webstore :: product name (branding)
+src/ad/Dockerfile :: /opentelemetry-demo-ad/ :: install dir named after the Gradle root project (branding)
+src/ad/README.md :: /opentelemetry-demo-ad/ :: install dir named after the Gradle root project (branding)
+src/ad/settings.gradle :: rootProject\.name = 'opentelemetry-demo-ad' :: Gradle project name (DECISIONS: Naming)
+src/ad/build.gradle :: /opentelemetry-demo/pb\b :: repo path in a comment about the proto source dir
+src/fraud-detection/build.gradle.kts :: group = "io\.opentelemetry" :: Gradle group name (DECISIONS: Naming)
+src/checkout/*.go :: github\.com/open-telemetry/opentelemetry-demo/src/checkout\S* :: Go module path (DECISIONS: Naming)
+src/checkout/go.mod :: ^module github\.com/open-telemetry/opentelemetry-demo/src/checkout$ :: Go module path (DECISIONS: Naming)
+src/product-catalog/*.go :: github\.com/opentelemetry/opentelemetry-demo/src/product-catalog\S* :: Go module path (DECISIONS: Naming)
+src/product-catalog/go.mod :: ^module github\.com/opentelemetry/opentelemetry-demo/src/product-catalog$ :: Go module path (DECISIONS: Naming)
+src/*/genproto/oteldemo/demo.pb.go :: \\(x[0-9a-f]{2}|b)oteldemo(?=\\) :: serialized descriptor of the oteldemo proto package (generated code)
+src/*/genproto/oteldemo/demo.pb.go :: genproto/oteldemob\\x06 :: serialized go_package option of the oteldemo proto package (generated code)
+src/recommendation/demo_pb2.py :: \\x[0-9a-f]{2}oteldemo(?=\\)|genproto/oteldemob(?=\\x) :: serialized descriptor of the oteldemo proto package (generated code)
+src/frontend/*.ts :: \botel(Blue|Yellow|Gray|Red)\b :: theme colour names (DECISIONS: Naming)
+src/frontend/*.tsx :: <title>Otel Demo - :: page titles (DECISIONS: Naming)
+src/frontend/components/Header/Header.styled.ts :: /images/opentelemetry-demo-logo\.png :: logo path (branding)
+src/frontend/components/Footer/Footer.tsx :: OpenTelemetry \(<a href="https://github\.com/open-telemetry/opentelemetry-demo"> :: footer branding and source link, kept per DECISIONS
+src/payment/index.js :: \botelDemoPackage\b :: variable holding the loaded oteldemo proto package
+src/payment/package.json :: "repository": "https://github\.com/opentelemetry/opentelemetry-demo" :: repository URL (branding)
+src/quote/composer.json :: part of OpenTelemetry Demo :: composer description (branding)
+src/react-native-app/app.json :: "io\.opentelemetry\.reactnativeapp" :: RN bundle id (DECISIONS: Naming)
+src/react-native-app/app/(tabs)/index.tsx :: ^\s*OpenTelemetry demo are running$ :: product name in UI text (branding)
+
+# --- Service code: dormant transitive dependencies ------------------------------
+src/checkout/go.mod :: ^\s+(connectrpc\.com/otelconnect|go\.opentelemetry\.io/(otel(/\S+)?|auto/sdk)) v\S+ // indirect$ :: dormant transitive, see DECISIONS.md
+src/product-catalog/go.mod :: ^\s+(connectrpc\.com/otelconnect|go\.opentelemetry\.io/(otel(/\S+)?|auto/sdk)) v\S+ // indirect$ :: dormant transitive, see DECISIONS.md
+src/agent/requirements.txt :: ^\s*(opentelemetry-api==\S+ \\|#\s+opentelemetry-api)$ :: dormant transitive, see DECISIONS.md
+src/mcp/requirements.txt :: ^\s*(opentelemetry-api==\S+ \\|#\s+opentelemetry-api)$ :: dormant transitive, see DECISIONS.md
+
+# --- Service code: framework telemetry kept per DECISIONS ----------------------
+src/flagd-ui/lib/flagd_ui_web/endpoint.ex :: plug Plug\.Telemetry, :: Phoenix request telemetry events for request logs, kept per DECISIONS

@@ -1,0 +1,4 @@
+# Known, accepted connection attempts for silence_check.sh.
+# Format: <container> :: <python regex matched against the tcpdump line> :: <reason>
+# Keep entries narrow; every other hit fails the check.
+flagd :: 127\.0\.0\.1\.\d+ > 127\.0\.0\.1\.4318: :: flagd always builds an OTLP trace exporter that defaults to https://localhost:4318; accepted as non-silent by the maintainer, see notel/BREAKING.md #23
