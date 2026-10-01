@@ -1,6 +1,7 @@
 # recommendation (Python)
 
 ## Observability removed
+
 - `recommendation_server.py`:
   - All `opentelemetry.*` imports, the `TracingHook` import and
     `api.add_hooks([TracingHook()])`.
@@ -27,12 +28,14 @@
   `python-json-logger` (only imported by the deleted `logger.py`).
 
 ## Behavior-preserving replacements
+
 - `logging.basicConfig(level=logging.INFO)` at the start of `__main__`, so the
   `main` logger reaches stdout (BREAKING.md #5). Output format is the stdlib
   default, e.g. `INFO:main:Recommendation service started, listening on port 9001`.
 - The service no longer needs `OTEL_SERVICE_NAME` to start (BREAKING.md #8).
 
 ## Traps
+
 - `logger` and `product_catalog_stub` are module globals created in
   `__main__`. Keep `logger = logging.getLogger('main')` there.
 - `python-dotenv` is in `requirements.in` but not imported. It is not
@@ -42,9 +45,11 @@
   command, since the written one would not resolve if re-run.
 
 ## Dormant transitive OTel
+
 - none
 
 ## Verify
+
 - Lockfile, from the repo root (header paths are repo-relative):
   `docker run --rm -v "$PWD":/repo -w /repo python:3.14.7-alpine3.24@sha256:c6ead215bfd31f1e433d968853b7a769989117115b728874824e6c0a27cb96fc sh -c 'pip install -q pip==25.2 pip-tools==7.5.2 && pip-compile --allow-unsafe --generate-hashes --no-emit-index-url --strip-extras --output-file=src/recommendation/requirements.txt src/recommendation/requirements.in'`
   (keeps the existing pins; only removals expected).

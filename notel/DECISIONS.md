@@ -99,6 +99,11 @@ maintainer. Do not decide on your own.
   (`strip_branding`). The logo keeps its upstream filename, so no frontend
   code changes. Page titles and the theme stay unchanged. If upstream
   changes the logo, regenerate the asset with `make_logo.py`.
+- **README**: upstream `README.md` moves to `README.original.md` (with the
+  usual infra edits), and the notel README from `notel/assets/README.md`
+  takes its place. `strip_infra.py` applies this on every sync. The notel
+  README states that contributions to the demo itself go upstream, and that
+  this project only accepts contributions that help strip observability.
 - **CI**: strip workflows and jobs that exist only for observability (the
   telemetry tests, Weaver, matrix entries for deleted images). Keep the rest.
   Image pushes go only to `ghcr.io/bronto-community/notel-demo`, with no

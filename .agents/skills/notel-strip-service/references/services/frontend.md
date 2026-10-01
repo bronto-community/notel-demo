@@ -1,6 +1,7 @@
 # frontend (Next.js, TypeScript)
 
 ## Observability removed
+
 - `utils/telemetry/Instrumentation.js`: Node SDK (OTLP gRPC traces, metrics,
   logs, resource detectors, auto-instrumentations). Deleted.
 - `utils/telemetry/FrontendTracer.ts`: browser `WebTracerProvider`, OTLP HTTP
@@ -35,6 +36,7 @@
   `utils/ApiLogMiddleware.ts`.
 
 ## Behavior-preserving replacements
+
 - `utils/ApiLogMiddleware.ts` (BREAKING.md #12): slim wrapper that only writes
   the pino `API request completed` (info) and `API request failed` (error,
   then rethrow) logs, with the same fields (`http.request.method`, `url.path`,
@@ -43,6 +45,7 @@
 - `utils/telemetry/logger.ts` moved unchanged to `utils/logger.ts`.
 
 ## Traps
+
 - `npm run lint` (`next lint`) is broken upstream: Next 16 removed `next
   lint` and ESLint 9 rejects `.eslintrc`. Not fixed here. Lint was checked
   with a temporary flat config (typescript-eslint recommended) mounted into
@@ -55,12 +58,14 @@
 - Ad flag targeting loses `session.id` baggage (BREAKING.md #1, open).
 
 ## Dormant transitive OTel
+
 - `next` vendors `next/dist/compiled/@opentelemetry/api` (known case).
 - `npm ls --all` shows only `UNMET OPTIONAL DEPENDENCY @opentelemetry/api@^1.1.0`
   (an optional peer of `next`); nothing is installed under
   `node_modules/@opentelemetry`.
 
 ## Verify
+
 - `docker build -f src/frontend/Dockerfile .` (runs `next build`, including
   the type-check).
 - `docker build --load --target builder -f src/frontend/Dockerfile -t fe-b .`

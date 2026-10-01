@@ -1,6 +1,7 @@
 # fraud-detection (Kotlin)
 
 ## Observability removed
+
 - `src/main/kotlin/frauddetection/main.kt`:
   - `FlagdOptions.withGlobalTelemetry(true)`.
   - The "via baggage?" TODO in `getFeatureFlagValue`.
@@ -14,12 +15,14 @@
   removed from the pattern.
 
 ## Behavior-preserving replacements
+
 - `JAVA_TOOL_OPTIONS="-Xmx180m"` is kept without the agent.
 - The flag evaluation context still uses a random UUID `session`. It never
   came from baggage, so nothing changes.
 - The log pattern change is BREAKING.md #17.
 
 ## Traps
+
 - The code never called the OTel API directly, so the direct deps were only
   there for the agent and annotations. Removing them needs no code changes.
 - `group = "io.opentelemetry"` in `build.gradle.kts` is the Maven group
@@ -29,6 +32,7 @@
   not observability.
 
 ## Dormant transitive OTel
+
 - `dev.openfeature.contrib.providers:flagd:0.14.2` ->
   `io.opentelemetry:opentelemetry-api:1.63.0` -> `opentelemetry-context`,
   `opentelemetry-common`. These are shaded into the fat jar. Nothing calls
@@ -38,6 +42,7 @@
   are configured (DECISIONS.md known case).
 
 ## Verify
+
 - `docker build -f src/fraud-detection/Dockerfile .` (repo root as the
   context).
 - `gradle dependencies --configuration runtimeClasspath` in

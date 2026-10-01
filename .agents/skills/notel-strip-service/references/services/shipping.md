@@ -1,6 +1,7 @@
 # shipping (Rust)
 
 ## Observability removed
+
 - `src/telemetry_conf.rs`: deleted (OTLP tracer, meter and logger providers,
   resource detectors, the propagator, the tracing bridge and `OtelGuard`).
 - `src/main.rs`: `init_otel`, the "Successfully configured OTel" log, the
@@ -18,12 +19,14 @@
   bumped.
 
 ## Behavior-preserving replacements
+
 - `tracing_subscriber::fmt().with_writer(std::io::stdout).with_env_filter(EnvFilter::new("info")).init()`
   at the top of `main` (BREAKING.md #4). It matches the old stdout fmt layer,
   which had a hardcoded `info` filter and ANSI on by default. `tracing` stays
   as the log facade, per DECISIONS.md.
 
 ## Traps
+
 - Initialize the subscriber before anything logs. The flagd provider logs
   connection retries at WARN during `FlagdProvider::new`.
 - The service blocks at startup until flagd is reachable. This is upstream
@@ -31,10 +34,12 @@
   `src/flagd/demo.flagd.json`.
 
 ## Dormant transitive OTel
+
 - none (`cargo tree -i opentelemetry` reports no match. `cargo tree -e all`
   has no opentelemetry, otel or prometheus crates)
 
 ## Verify
+
 - `cargo test --locked` in `rust:1.98.0` with `protobuf-compiler`: 7 passed.
 - `docker build --load -t notel-test/shipping -f src/shipping/Dockerfile .`
 - On one network with quote and flagd: `POST /get-quote` with 3 items returns

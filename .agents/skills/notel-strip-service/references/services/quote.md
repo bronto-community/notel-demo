@@ -1,6 +1,7 @@
 # quote (PHP)
 
 ## Observability removed
+
 - `public/index.php`: the `OpenTelemetry\...` uses and the three periodic
   `forceFlush` timers ("workaround for non-async batch processors").
 - `app/routes.php`: the `calculate-quote` manual span, its events and
@@ -18,6 +19,7 @@
 - `README.md`: the "automatic and manual instrumentation" sentence.
 
 ## Behavior-preserving replacements
+
 - Monolog `StreamHandler` on `$loggerSettings['path']` (`php://stdout`,
   defined in `settings.php`) at `LogLevel::INFO`, the old handler's level
   (BREAKING.md #7). "Calculated quote" now appears on stdout as
@@ -26,6 +28,7 @@
   sets `$quote = 0.0` and `finally` still does `return $quote;`.
 
 ## Traps
+
 - `return` inside `finally` also swallows `TypeError`. A request without a
   JSON content type gives `getParsedBody() === null`, and
   `array_key_exists(..., null)` throws `TypeError`, which is not an
@@ -39,11 +42,13 @@
   from `vendor/`.
 
 ## Dormant transitive OTel
+
 - none. `vendor/composer/installed.json` has no `open-telemetry/*` package.
   The only remaining mention is a doc comment in Monolog's `FrankenPhpHandler`.
   The image has no `opentelemetry` or `protobuf` extension (`php -m`).
 
 ## Verify
+
 - `docker build --load -t notel-test/quote -f src/quote/Dockerfile .`
 - `docker run -e QUOTE_PORT=8090 -p 18090:8090 notel-test/quote`, then
   `curl -X POST localhost:18090/getquote -H 'Content-Type: application/json' -d '{"numberOfItems":3}'`

@@ -1,6 +1,7 @@
 # react-native-app (TypeScript, Expo / React Native)
 
 ## Observability removed
+
 - hooks/useTracer.ts: deleted. It held the WebTracerProvider, OTLP HTTP trace
   exporter (`<proxy>/otlp-http/v1/traces`), W3C trace-context and baggage
   propagators, fetch and XHR instrumentation, the resource attributes, and the
@@ -24,12 +25,14 @@
   `es-module-lexer` went with them.
 
 ## Behavior-preserving replacements
+
 - Splash screen is gated on fonts only (BREAKING.md #11).
 - All API methods still return promises (the non-`async` ones return the
   `request()` promise directly), so callers and `mutationFn` usage are
   unchanged.
 
 ## Traps
+
 - Keep `react-native-device-info`: utils/Localhost.ts uses it for emulator
   detection. It was also used for OTel resource attributes.
 - The removed Proxy called `SessionGateway.getSession()` before every API call,
@@ -54,9 +57,11 @@
   "OpenTelemetry demo" are branding and stay.
 
 ## Dormant transitive OTel
+
 - none (`node_modules/@opentelemetry` does not exist after `npm ci`).
 
 ## Verify
+
 - `docker run --rm -v "$PWD":/src:ro node:22 sh -c 'cp -r /src /app && cd /app && npm i -g npm@11 && npm ci && npm run lint && npx tsc --noEmit'`
   from `src/react-native-app`: lint 0 errors (3 pre-existing warnings); tsc
   errors only in protos/demo.ts (exactly the 3 upstream errors, see Traps).

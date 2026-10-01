@@ -1,6 +1,7 @@
 # agent (Python, FastAPI + LangChain)
 
 ## Observability removed
+
 - `run.py`: `Traceloop.init` (and its `OTEL_SERVICE_NAME` read), the
   `HTTPXClientInstrumentor`, `OpenAIInstrumentor` and
   `FastAPIInstrumentor.instrument_app` calls with their imports, and the now
@@ -26,9 +27,11 @@
   (`product-catalog`, `mcp`, `flagd`).
 
 ## Behavior-preserving replacements
+
 - none needed. `logging.basicConfig(level=logging.INFO)` was already there.
 
 ## Traps
+
 - Keep `mcp<2` (currently `mcp==1.30.0`).
 - VCR is used at runtime: `.env` sets `USE_VCR=True` and
   `LLM_MODEL=azure/gpt-5.5`, and compose mounts `./src/agent/fixtures` into
@@ -36,10 +39,12 @@
   replay against a copy of the fixtures.
 
 ## Dormant transitive OTel
+
 - `fastmcp` -> `fastmcp-slim` -> `opentelemetry-api` (API only, no SDK, so
   no-op). Known case in DECISIONS.md.
 
 ## Verify
+
 - Lockfile, run from `src/agent` (header paths are relative) with
   `python:3.14-slim@sha256:51dafde81dbdb6ebde285137a295cf18a47ca95234fe388a343719cb97305b3d`,
   `pip==25.2 pip-tools==7.5.2`, same flags as the header.

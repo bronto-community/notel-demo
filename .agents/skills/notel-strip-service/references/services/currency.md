@@ -1,6 +1,7 @@
 # currency (C++)
 
 ## Observability removed
+
 - `src/logger_common.h`, `src/meter_common.h`, `src/tracer_common.h`: deleted
   (OTLP gRPC exporters, tracer/meter/logger provider init, `GrpcServerCarrier`
   for W3C context extraction from gRPC metadata).
@@ -27,8 +28,9 @@
   in the package).
 
 ## Behavior-preserving replacements
+
 - BREAKING.md #3: every `logger->Info/Error` went only to OTLP. Replaced with
-  `logInfo` (stdout, `INFO: ` prefix) and `logError` (stderr, `ERROR: `
+  `logInfo` (stdout, `INFO:` prefix) and `logError` (stderr, `ERROR:`
   prefix). Each line is built as one string and flushed, so lines appear
   promptly in `docker logs` (stdout is a pipe, hence block-buffered) and do
   not interleave between gRPC threads. Log record attributes are appended as
@@ -39,6 +41,7 @@
   gRPC health service is kept.
 
 ## Traps
+
 - `docker build` with the docker-container buildx driver does not load the
   image; use `--load` to run it.
 - A SIGTERM sent within milliseconds of container start (before
@@ -52,6 +55,7 @@
   does not cover.
 
 ## Dormant transitive OTel
+
 - Alpine `grpc-dev`/`grpc` 1.78: `libgrpc.so` embeds upb descriptors for
   `envoy/config/trace/v3/opentelemetry.proto` (xDS config types) and a
   "Export telemetry domains in OpenTelemetry metrics" flag string. No OTel
@@ -60,6 +64,7 @@
 - The `currency` binary itself contains no `opentelemetry`/`otlp` strings.
 
 ## Verify
+
 - `docker build --load -f src/currency/Dockerfile -t notel-currency:test .`
   (context is the repo root, per `compose.yaml`).
 - `docker run --rm --entrypoint sh notel-currency:test -c 'ldd /usr/local/bin/currency | grep "not found"; find / -xdev -iname "*otel*" -o -xdev -iname "*opentelemetry*"'`

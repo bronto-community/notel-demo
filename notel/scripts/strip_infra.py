@@ -74,6 +74,7 @@ SCOPE_PATHS = [
     "LICENSE",
     "Makefile",
     "README.md",
+    "README.original.md",
     "buildkitd.toml",
     "docker-gen-proto.sh",
     "ide-gen-proto.sh",
@@ -1147,8 +1148,9 @@ def strip_docs(ctx):
     remove_md_section(ctx, "AGENTS.md", "## Telemetry conventions")
 
     # The README badge for the deleted telemetry tests workflow.
-    n = remove_lines(ctx.lines("README.md"), re.compile(r"^\[!\[Telemetry Tests\]\(.*run-telemetry-tests\.yml"))
-    ctx.expect("README.md", n, "removed Telemetry Tests badge")
+    readme = README_ORIGINAL if (ctx.root / README_ORIGINAL).is_file() else "README.md"
+    n = remove_lines(ctx.lines(readme), re.compile(r"^\[!\[Telemetry Tests\]\(.*run-telemetry-tests\.yml"))
+    ctx.expect(readme, n, "removed Telemetry Tests badge")
 
     rel = "CONTRIBUTING.md"
     replace_text(
@@ -1206,6 +1208,22 @@ def strip_docs(ctx):
 # --------------------------------------------------------------------------
 # notel branding (maintainer exception to "keep branding", see DECISIONS.md)
 # --------------------------------------------------------------------------
+README_ORIGINAL = "README.original.md"
+README_ASSET = "notel/assets/README.md"
+
+
+def pending_readme(root):
+    """Upstream README.md moves to README.original.md; the notel README takes its place."""
+    asset, readme, original = root / README_ASSET, root / "README.md", root / README_ORIGINAL
+    if not asset.is_file():
+        raise StripError(f"{README_ASSET}: notel README missing")
+    if readme.is_file() and readme.read_bytes() == asset.read_bytes():
+        return None
+    if not original.is_file() and not readme.is_file():
+        raise StripError("README.md: expected upstream README not found")
+    return "move+write" if not original.is_file() else "write"
+
+
 BRAND_ASSETS = {
     "src/image-provider/static/opentelemetry-demo-logo.png": "notel/assets/notel-demo-logo.png",
 }
@@ -1265,8 +1283,10 @@ def run(root, digest_mode, check_only):
         strip_docs(ctx)
         strip_branding(ctx)
         assets = pending_assets(root)
+        readme_op = pending_readme(root)
     except StripError as e:
         assets = []
+        readme_op = None
         ctx.errors.append(str(e))
 
     deletions = [p for p in DELETE_PATHS if (root / p).exists() or (root / p).is_symlink()]
@@ -1277,6 +1297,8 @@ def run(root, digest_mode, check_only):
         print(f"edit: {line}")
     for _, _, target in assets:
         print(f"asset: {target}")
+    if readme_op:
+        print(f"readme: {readme_op}")
     if ctx.errors:
         print("\nERRORS (nothing was written):", file=sys.stderr)
         for e in ctx.errors:
@@ -1285,7 +1307,7 @@ def run(root, digest_mode, check_only):
     changed = ctx.changed()
     if check_only:
         print(f"\ncheck only: {len(deletions)} deletions and {len(changed)} file edits pending")
-        return 1 if (deletions or changed or assets) else 0
+        return 1 if (deletions or changed or assets or readme_op) else 0
 
     for p in deletions:
         target = root / p
@@ -1301,6 +1323,10 @@ def run(root, digest_mode, check_only):
         (root / rel).write_text(text, encoding="utf-8")
     for src, dst, _ in assets:
         shutil.copyfile(src, dst)
+    if readme_op == "move+write":
+        (root / "README.md").rename(root / README_ORIGINAL)
+    if readme_op:
+        shutil.copyfile(root / README_ASSET, root / "README.md")
     print(f"\nwrote {len(changed)} files, deleted {len(deletions)} paths")
 
     hits = check_residuals.scan(root, [p for p in SCOPE_PATHS if (root / p).exists()])

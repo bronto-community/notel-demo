@@ -1,6 +1,7 @@
 # flagd-ui (Elixir, Phoenix)
 
 ## Observability removed
+
 - mix.exs: `opentelemetry`, `opentelemetry_api`, `opentelemetry_exporter`,
   `opentelemetry_phoenix`, `opentelemetry_bandit`, `telemetry_poller`,
   `telemetry_metrics` deps and the release `applications:` block (it only
@@ -23,12 +24,14 @@
   uses that metadata any more.
 
 ## Behavior-preserving replacements
+
 - Prod startup no longer needs `OTEL_EXPORTER_OTLP_ENDPOINT` (BREAKING.md #9).
 - `:telemetry` and `Plug.Telemetry` in endpoint.ex stay: Phoenix request logs
   (`GET /...`, `Sent 200 in ...`) depend on them (DECISIONS, framework
   telemetry).
 
 ## Traps
+
 - `mix deps.unlock --unused` without fetched deps unlocks every transitive
   dep (it removed plug, mime, telemetry, ...). Run `mix deps.get` first, in a
   scratch copy so `deps/` does not land in the repo.
@@ -43,9 +46,11 @@
   opentelemetry.io docs link in README.md.
 
 ## Dormant transitive OTel
+
 - none.
 
 ## Verify
+
 - `docker build -f src/flagd-ui/Dockerfile .` (repo root context; the test
   stage runs `mix test`: 47 passed). Compile warnings are in deps only.
 - `docker run -v <dir with demo.flagd.json>:/app/data -e SECRET_KEY_BASE=... -e PHX_SERVER=true -p 14000:4000 <image>`

@@ -11,7 +11,7 @@
 ## Results
 
 | Step | Result |
-|------|--------|
+| --- | --- |
 | 1. Static checks | PASS. Residual scan exits with 0, every allowlist entry has a reason, all seven compose file combinations pass `config -q`, and no direct observability dependencies were found (OTel appears only as indirect Go modules via flagd and as `opentelemetry-api` via fastmcp-slim in agent and mcp) |
 | 2. Build | PASS. Prebuilt images were used. Only `frontend-tests` was missing, and it was built |
 | 3. Run and silence check | FAIL. flagd makes OTLP connection attempts (see below) |
@@ -23,7 +23,7 @@
 
 ## Silence report
 
-```
+```text
 == flagd ==
 10:34:10.654540 lo In IP 127.0.0.1.60410 > 127.0.0.1.4318: Flags [S] ...
 ... 163 SYNs to 127.0.0.1:4318, one every ~5 s, for the whole run

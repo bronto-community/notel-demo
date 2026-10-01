@@ -1,6 +1,7 @@
 # accounting (.NET / C#)
 
 ## Observability removed
+
 - `Consumer.cs`: the `ActivitySource("Accounting.Consumer")`, the
   `StartActivity("order-consumed")` around each consume, and
   `using System.Diagnostics;`.
@@ -15,6 +16,7 @@
   unchanged.
 
 ## Behavior-preserving replacements
+
 - `Microsoft.Extensions.Hosting` 10.0.10 added as a direct
   `PackageReference`, pinned to the same release train as the existing
   `Microsoft.Extensions.Logging` 10.0.10. Before, `Host` and
@@ -24,6 +26,7 @@
   Logging still goes to the console through `Host.CreateDefaultBuilder`.
 
 ## Traps
+
 - Removing `OpenTelemetry.AutoInstrumentation` breaks the build with CS0234
   and CS0246 (`Microsoft.Extensions.Hosting`, `BackgroundService`), because
   the hosting assemblies were never referenced directly.
@@ -36,12 +39,14 @@
   `chown` would fail.
 
 ## Dormant transitive OTel
+
 - `Confluent.Kafka` -> `librdkafka.redist` 2.15.0, which embeds nanopb OTLP
   protos for KIP-714 client metrics. Known dormant case in DECISIONS.md.
   `dotnet list package --include-transitive` shows no `OpenTelemetry.*`
   packages.
 
 ## Verify
+
 - `docker build -f src/accounting/Dockerfile .` (repo-root context, per
   compose.full.yaml).
 - `dotnet list package --include-transitive` in the

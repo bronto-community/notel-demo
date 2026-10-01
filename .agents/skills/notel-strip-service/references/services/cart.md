@@ -1,6 +1,7 @@
 # cart (.NET / C#)
 
 ## Observability removed
+
 - `src/Program.cs`: the `OpenTelemetry.*` and `OpenFeature.Hooks` usings;
   `AddOpenTelemetry(... AddOtlpExporter())` on logging (`AddConsole` kept);
   the OpenFeature `MetricsHook` and `TraceEnricherHook`; the
@@ -24,6 +25,7 @@
   packages, including `OpenTelemetry.OpAmp.Client`.
 
 ## Behavior-preserving replacements
+
 - `Program.cs`: `app.Services.GetRequiredService<ICartStore>();` right after
   `builder.Build()` (BREAKING.md #10). The removed instrumentation line
   resolved the singleton eagerly, which connects to Valkey at startup. Without
@@ -34,6 +36,7 @@
   flag are unchanged.
 
 ## Traps
+
 - `MetricsHook` and `TraceEnricherHook` live in the `OpenFeature` package
   itself (`OpenFeature.Hooks` namespace), not in an OTel package. Removing the
   OTel packages does not break the build if they stay, so they have to be
@@ -46,12 +49,14 @@
   `--load` to run the image locally.
 
 ## Dormant transitive OTel
+
 - none. `dotnet list package --include-transitive` for `src/cart.csproj` and
   `tests/cart.tests.csproj` shows no `OpenTelemetry.*` or OpAMP packages.
   `OpenFeature` ships `MetricsHook` and `TraceEnricherHook`
   (`System.Diagnostics.Metrics` and `Activity`) but they are not registered.
 
 ## Verify
+
 - `docker build -f src/cart/src/Dockerfile .` (repo-root context, per
   compose.yaml); the test stage reports `Passed: 3`.
 - `dotnet list src/cart.csproj package --include-transitive` in the

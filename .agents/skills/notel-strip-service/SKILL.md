@@ -83,23 +83,30 @@ Do not decide on your own.
     using the template below. If you hit a breaking or behavior change that
     is not yet in BREAKING.md, report it to the orchestrator.
 
-## references/services/<service>.md template
+## `references/services/<service>.md` template
 
 ```markdown
 # <service> (<language>)
 
 ## Observability removed
+
 - <file>: <what>
 
 ## Behavior-preserving replacements
+
 - <what was added and why (link BREAKING.md item)>
 
 ## Traps
+
 - <non-obvious things that broke or nearly broke>
 
 ## Dormant transitive OTel
+
 - <dependency chain>, or "none"
 
 ## Verify
+
 - <build or test commands that prove it works>
 ```
+
+Notes must pass `markdownlint -c .markdownlint.yaml`.

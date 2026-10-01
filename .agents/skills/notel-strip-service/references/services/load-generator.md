@@ -1,6 +1,7 @@
 # load-generator (Python, Locust)
 
 ## Observability removed
+
 - `locustfile.py`:
   - The `grpc.experimental.gevent` workaround. Its comment ties it to the
     gRPC exporter imports, and nothing else imports grpc (grpcio is gone from
@@ -24,12 +25,14 @@
   `opentelemetry-*` packages. `openfeature-provider-ofrep` is kept.
 
 ## Behavior-preserving replacements
+
 - `logging.basicConfig(level=logging.INFO)` at module import. The image runs
   `locust --skip-log-setup`, so this is the only root handler (BREAKING.md
   #6). Format changes from the LoggingInstrumentor format (timestamp, trace
   and span IDs) to the stdlib default `INFO:root:<message>`.
 
 ## Traps
+
 - KEEP both browser `wait_for_timeout(2000)` calls (maintainer decision,
   overrides the "browser export sleeps" wording in DECISIONS.md). Upstream
   commented them as "time to export the traces", but they also keep the page
@@ -45,9 +48,11 @@
   a frontend.
 
 ## Dormant transitive OTel
+
 - none
 
 ## Verify
+
 - Lockfile, from the repo root with
   `python:3.14.7-slim-bookworm@sha256:82bc3c539b8813ada9d68c63b40158fa002f7f33de9bf3312a3dfdc0620dff56`,
   `pip==25.2 pip-tools==7.5.2`, same flags as the header. Restore the header

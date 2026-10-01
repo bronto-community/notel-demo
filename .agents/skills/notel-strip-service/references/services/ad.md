@@ -1,6 +1,7 @@
 # ad (Java)
 
 ## Observability removed
+
 - `src/main/java/oteldemo/AdService.java`:
   - All `io.opentelemetry.*` and `io.prometheus.*` imports.
   - The Prometheus `HTTPServer` field, the `AD_PROMETHEUS_PORT` env read, the
@@ -35,6 +36,7 @@
   section.
 
 ## Behavior-preserving replacements
+
 - `JAVA_TOOL_OPTIONS="-Xmx200m"` is kept without the agent.
 - log4j2 still logs to stdout with the same messages. Only the MDC fields
   that the agent filled are gone (BREAKING.md #17).
@@ -42,6 +44,7 @@
   WARN and calls `responseObserver.onError`.
 
 ## Traps
+
 - The `TARGETED`/`RANDOM` enums look like business logic but existed only for
   telemetry. Removing them does not change the response.
 - The shared working tree was reset by another process during the first
@@ -55,6 +58,7 @@
   comment. These need allowlist entries as branding.
 
 ## Dormant transitive OTel
+
 - `dev.openfeature.contrib.providers:flagd:0.14.2` ->
   `io.opentelemetry:opentelemetry-api:1.63.0` -> `opentelemetry-context`,
   `opentelemetry-common`. These ship in `build/install/.../lib`. Nothing
@@ -62,6 +66,7 @@
   on the classpath, so `GlobalOpenTelemetry` is a no-op.
 
 ## Verify
+
 - `docker build -f src/ad/Dockerfile .` (repo root as the context).
 - `./gradlew dependencies --configuration runtimeClasspath -PprotoSourceDir=<pb>`
   in `eclipse-temurin:24.0.2_12-jdk`, then grep `opentelemetry|prometheus`.

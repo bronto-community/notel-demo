@@ -50,14 +50,16 @@ src/image-provider/static/opentelemetry-demo-logo.png :: opentelemetry-demo-logo
 .github/PULL_REQUEST_TEMPLATE.md :: the opentelemetry\.io repo :: upstream docs repository name
 .github/PULL_REQUEST_TEMPLATE.md :: @open-telemetry/demo-approvers :: upstream approvers team
 
-# --- Docs (README branding kept as-is per DECISIONS) --------------------------
-README.md :: https?://[^\s)\]>"'`]+ :: links to upstream project, docs, community and vendor forks
-README.md :: \bOpenTelemetry\b :: project name in README prose and title (branding)
-README.md :: alt="OTel logo" :: logo alt text (branding)
-README.md :: \[!\[OpenSSF Scorecard for opentelemetry-demo\] :: badge label naming the upstream repo
-README.md :: \[(Grafana Labs|OpenSearch|TelemetryHub)\] :: vendor names in the list of vendor forks
-README.md :: `#otel-community-demo` :: upstream Slack channel name
-README.md :: , AWS OpenSearch$ :: maintainer affiliation (person, not a backend)
+# --- Docs ----------------------------------------------------------------------
+README.md :: .* :: notel README (notel/assets/README.md): explains how this project relates to the OpenTelemetry Demo and what was removed
+# Upstream README, moved to README.original.md by strip_infra.py (branding kept as-is per DECISIONS)
+README.original.md :: https?://[^\s)\]>"'`]+ :: links to upstream project, docs, community and vendor forks
+README.original.md :: \bOpenTelemetry\b :: project name in README prose and title (branding)
+README.original.md :: alt="OTel logo" :: logo alt text (branding)
+README.original.md :: \[!\[OpenSSF Scorecard for opentelemetry-demo\] :: badge label naming the upstream repo
+README.original.md :: \[(Grafana Labs|OpenSearch|TelemetryHub)\] :: vendor names in the list of vendor forks
+README.original.md :: `#otel-community-demo` :: upstream Slack channel name
+README.original.md :: , AWS OpenSearch$ :: maintainer affiliation (person, not a backend)
 CONTRIBUTING.md :: https?://[^\s)\]>"'`]+ :: links to upstream project, community and tools
 CONTRIBUTING.md :: \bOpenTelemetry\b :: project and community name in contributor guide (branding)
 CONTRIBUTING.md :: \[otel-community-demo\] :: upstream Slack channel name

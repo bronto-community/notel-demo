@@ -1,6 +1,7 @@
 # checkout (Go)
 
 ## Observability removed
+
 - main.go: resource detectors, OTLP HTTP trace, metric and log providers and
   their shutdowns, the TraceContext+Baggage propagator, `otelslog` logger,
   `runtime.Start`, the `otelhooks.NewTracesHook()` OpenFeature hook,
@@ -18,12 +19,14 @@
   `go-sdk-contrib/hooks/open-telemetry` requirements (`go mod tidy`).
 
 ## Behavior-preserving replacements
+
 - `var logger = slog.New(slog.NewTextHandler(os.Stdout, nil))` at package level
   plus `slog.SetDefault(logger)` in `main` (BREAKING.md #2). Package-level init
   removes the old nil-logger window before provider setup. The sarama logger
   in kafka/producer.go receives this logger, so it now prints to stdout too.
 
 ## Traps
+
 - `flags_gen.go` is generated. Regenerate it, do not hand-edit:
   `docker run --rm -v "$PWD":/w -w /w golang:<Dockerfile version> sh -c 'go install github.com/open-feature/cli/cmd/openfeature@v0.4.0 && openfeature generate -o flags --package-name flags go'`
   from `src/checkout`. v0.4.0 reproduces the upstream file byte for byte
@@ -37,6 +40,7 @@
   the residual scanner. It is upstream naming, not observability.
 
 ## Dormant transitive OTel
+
 - `open-feature/go-sdk-contrib/providers/flagd` -> `flagd/core` ->
   `go.opentelemetry.io/otel` (+ `otel/metric`, `otel/trace`,
   `go.opentelemetry.io/auto/sdk`), and flagd `service/rpc` ->
@@ -46,6 +50,7 @@
   of `otelconnect`'s tests (`go mod why -m`). They are not linked.
 
 ## Verify
+
 - `docker run --rm -v "$PWD/src/checkout":/w -w /w golang:<ver>-bookworm sh -c 'go mod tidy && go vet ./... && go test ./...'`
 - `docker build --load -t notel-test/checkout -f src/checkout/Dockerfile .`
 - `go version -m <extracted binary> | grep -i otel` lists only otelconnect,

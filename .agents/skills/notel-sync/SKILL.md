@@ -8,7 +8,7 @@ description: Regenerate the notel-demo fork (the OpenTelemetry Demo with all obs
 notel is regenerated on each sync, not merged. `main` is always laid out as
 follows:
 
-```
+```text
 <upstream commit>
   └ notel: tooling                         (notel/, .agents/, .claude symlink, AGENTS.md section)
     └ notel: delete observability components

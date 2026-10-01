@@ -1,6 +1,7 @@
 # mcp (Python, FastMCP)
 
 ## Observability removed
+
 - `run.py`: `Traceloop.init` (and its `OTEL_SERVICE_NAME` read),
   `HTTPXClientInstrumentor().instrument()`, their imports, and the now unused
   `import os`.
@@ -15,17 +16,21 @@
   "Traceloop init" file-layout note.
 
 ## Behavior-preserving replacements
+
 - none needed. `logging.basicConfig(level=logging.INFO)` was already there.
 
 ## Traps
+
 - If upstream adds a real `langchain` import to the MCP server, put the
   dependency back.
 
 ## Dormant transitive OTel
+
 - `fastmcp` -> `fastmcp-slim` -> `opentelemetry-api` (API only, no SDK, so
   no-op). Known case in DECISIONS.md.
 
 ## Verify
+
 - Lockfile, from the repo root (header paths are repo-relative) with
   `python:3.14-slim@sha256:51dafde81dbdb6ebde285137a295cf18a47ca95234fe388a343719cb97305b3d`,
   `pip==25.2 pip-tools==7.5.2`, same flags as the header.

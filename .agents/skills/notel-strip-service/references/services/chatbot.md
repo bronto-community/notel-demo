@@ -1,6 +1,7 @@
 # chatbot (Python, Gradio)
 
 ## Observability removed
+
 - `run.py`: `_configure_telemetry()` (MeterProvider, TracerProvider, OTLP HTTP
   metric and span exporters, Requests and HTTPX instrumentors) and its call,
   all `opentelemetry.*` imports, and the OpAMP `start_opamp_agent()` /
@@ -15,15 +16,19 @@
   "No telemetry appears" troubleshooting entry.
 
 ## Behavior-preserving replacements
+
 - none needed. `logging.basicConfig(level=logging.INFO)` was already there.
 
 ## Traps
+
 - none
 
 ## Dormant transitive OTel
+
 - none
 
 ## Verify
+
 - Lockfile, run from `src/chatbot` (header paths are relative) with
   `python:3.14-slim@sha256:51dafde81dbdb6ebde285137a295cf18a47ca95234fe388a343719cb97305b3d`,
   `pip==25.2 pip-tools==7.5.2`, same flags as the header.

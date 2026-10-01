@@ -1,6 +1,7 @@
 # payment (Node.js)
 
 ## Observability removed
+
 - `charge.js`: tracer, meter and the `demo.payment.transactions` counter; the
   `charge` span with its attributes, `recordException`, `setStatus`,
   `error.type` and `span.end`; the `synthetic_request` baggage read and
@@ -21,6 +22,7 @@
   COPY of `/autoinstrumentation` and `NODE_OPTIONS`.
 
 ## Behavior-preserving replacements
+
 - `logger.js` (BREAKING.md #16): the pino mixin hardcodes
   `'service.name': 'payment'` instead of reading `OTEL_SERVICE_NAME`, so the
   log shape is unchanged.
@@ -29,16 +31,19 @@
   The `Transaction complete.` log still carries `loyalty_level`.
 
 ## Traps
+
 - The Node agent was injected by the Dockerfile (`NODE_OPTIONS`), not by
   `package.json`. Both must go.
 - The "Do not charge synthetic requests" branch only set a span attribute. No
   charge logic depended on it.
 
 ## Dormant transitive OTel
+
 - none (`npm ls --all | grep -i opentelemetry` is empty, and there is no
   `node_modules/@opentelemetry`).
 
 ## Verify
+
 - `docker build -f src/payment/Dockerfile .`
 - `docker build --load --target builder -f src/payment/Dockerfile -t pay-b .`
   then `docker run --rm pay-b sh -c 'npm ls --all | grep -i opentelemetry'`

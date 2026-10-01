@@ -62,7 +62,7 @@ whether it could be raised upstream. Status is one of: `open` (not fixed),
 ## Fixed in notel (behavior preserved by explicit replacement)
 
 | # | Service | Coupling | notel fix |
-|---|---------|----------|-----------|
+| --- | --- | --- | --- |
 | 2 | checkout, product-catalog | `slog` default and sarama logger are otelslog-only; no stdout logs | slog TextHandler on stdout |
 | 3 | currency | all logs go through the OTel C++ logger only | `std::cout` / `std::cerr` |
 | 4 | shipping | `tracing_subscriber` (incl. stdout fmt layer) is initialized inside the OTel init | init the fmt subscriber in `main` |
@@ -125,7 +125,7 @@ agent is added**. Keep that in mind when you compare instrumented runs: spans
 from these libraries are library instrumentation, not demo code.
 
 | Where | Source | Becomes visible with |
-|-------|--------|----------------------|
+| --- | --- | --- |
 | checkout, product-catalog | flagd Go provider → `flagd/core` evaluator → otel API, `go.opentelemetry.io/auto/sdk`, otelconnect (inactive unless `WithOtelInterceptor`) | Go eBPF auto-instrumentation (picks up API spans through auto/sdk) |
 | ad, fraud-detection | flagd Java provider → `opentelemetry-api` (used only if handed an OpenTelemetry instance) | the Java agent, if the provider is wired up |
 | agent, mcp | `fastmcp` → `opentelemetry-api` | any Python SDK or auto-instrumentation |
