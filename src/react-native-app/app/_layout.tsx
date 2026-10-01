@@ -11,26 +11,20 @@ import { useColorScheme } from "react-native";
 import Toast from "react-native-toast-message";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect, useMemo } from "react";
-import { useTracer } from "@/hooks/useTracer";
+import { useEffect } from "react";
 import CartProvider from "@/providers/Cart.provider";
 
 const queryClient = new QueryClient();
 
-// Keep the native splash screen visible until fonts and the tracer have loaded.
+// Keep the native splash screen visible until fonts have loaded.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const [fontsLoaded] = useFonts({
+  const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
-  const { loaded: tracerLoaded } = useTracer();
 
-  const loaded = useMemo<boolean>(
-    () => fontsLoaded && tracerLoaded,
-    [fontsLoaded, tracerLoaded],
-  );
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
