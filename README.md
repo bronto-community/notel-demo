@@ -12,6 +12,15 @@ no agents, no exporters, no instrumentation libraries, no collector and no
 backends. It is a realistic, polyglot application that starts out completely
 uninstrumented.
 
+> [!NOTE]
+> **This project is built with AI.** The scripts, skills and docs in this
+> repository were written with an AI coding agent. Observability is
+> stripped from the upstream code by AI coding agents following the skills
+> in [.agents/skills/](.agents/skills/). A deterministic script handles the
+> mechanical infrastructure edits. Every result is checked by an automated
+> verification run, and each AI-generated commit has an `Assisted-by:`
+> trailer. Review the diff against upstream before relying on it.
+
 This project builds on top of the OpenTelemetry Demo. It is not a fork that
 evolves on its own: it is regenerated from upstream from time to time, so it
 stays as close to the original as possible. The upstream README is kept as
@@ -31,9 +40,10 @@ stays as close to the original as possible. The upstream README is kept as
   - AI- or skill-driven instrumentation, where a coding agent adds the
     instrumentation for you.
 
-  Because the upstream demo is instrumented by hand and follows the
-  OpenTelemetry semantic conventions, it serves as a reference you can
-  compare the result against.
+  The upstream demo combines zero-code instrumentation (the Java agent,
+  .NET auto-instrumentation, `opentelemetry-instrument`, the Node.js
+  auto-instrumentations) with manual spans, attributes and metrics. You can
+  compare what your approach produces with what upstream produces.
 - **Measure.** Get a baseline for resource usage, latency and startup time
   without any telemetry pipeline in the way.
 
