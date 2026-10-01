@@ -22,7 +22,7 @@ export default function Index() {
         ) : (
           <ThemedText>
             No products found, make sure the backend services for the
-            OpenTelemetry demo are running
+            notel demo are running
           </ThemedText>
         )}
       </ScrollView>
