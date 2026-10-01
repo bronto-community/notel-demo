@@ -2,23 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use core::fmt;
-use opentelemetry::global;
-use opentelemetry::metrics::Counter;
-use opentelemetry_instrumentation_actix_web::ClientExt;
-use std::sync::LazyLock;
 use std::{collections::HashMap, env};
 
 use anyhow::{Context, Result};
-use opentelemetry::{trace::get_active_span, KeyValue};
 use tracing::info;
 
 use super::shipping_types::Quote;
-
-static ITEMS_SHIPPED_COUNTER: LazyLock<Counter<u64>> = LazyLock::new(|| {
-    global::meter("otel_demo.shipping.quote")
-        .u64_counter("demo.shipping.items_shipped")
-        .build()
-});
 
 pub async fn create_quote_from_count(count: u32) -> Result<Quote, tonic::Status> {
     let f = match request_quote(count).await {
@@ -29,20 +18,7 @@ pub async fn create_quote_from_count(count: u32) -> Result<Quote, tonic::Status>
         }
     };
 
-    ITEMS_SHIPPED_COUNTER.add(count as u64, &[]);
-
-    Ok(get_active_span(|span| {
-        let q = create_quote_from_float(f);
-        if span.is_recording() {
-            let cost = format!("{}", q);
-            span.add_event(
-                "shipping.quote.received".to_string(),
-                vec![KeyValue::new("demo.shipping.cost.total", cost.clone())],
-            );
-            span.set_attribute(KeyValue::new("demo.shipping.cost.total", cost));
-        }
-        q
-    }))
+    Ok(create_quote_from_float(f))
 }
 
 async fn request_quote(count: u32) -> Result<f64, anyhow::Error> {
@@ -67,7 +43,6 @@ async fn request_quote(count: u32) -> Result<f64, anyhow::Error> {
 
     let mut response = client
         .post(quote_service_addr)
-        .trace_request()
         .send_json(&reqbody)
         .await
         .map_err(|err| anyhow::anyhow!("Failed to call quote service: {err}"))?;

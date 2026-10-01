@@ -15,8 +15,11 @@
   and `opentelemetry-resource-detectors`.
 - `Cargo.lock`: `cargo update --workspace` in `rust:1.98.0`. It only removes
   packages, including 19 crates (reqwest, tower-http and others) that are
-  now unused, and `base64 0.22.1` references become `base64`. Nothing is
-  bumped.
+  now unused, and the versioned `base64 0.x` references become `base64`
+  (0.22.1 on the first strip, 0.23.1 at 7ea09b86). Nothing is bumped.
+  On a sync where upstream changed `Cargo.lock`, the cherry-pick conflicts:
+  take upstream's lock and rerun `cargo update --workspace`, then compare
+  the `[[package]]` name/version sets with upstream's lock (only removals).
 
 ## Behavior-preserving replacements
 
