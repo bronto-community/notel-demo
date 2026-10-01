@@ -11,12 +11,10 @@ The MCP service exposes the OpenTelemetry Astronomy Shop demo's tools over the
 - Runtime: Python 3.14
 - MCP framework: [FastMCP](https://github.com/jlowin/fastmcp) (built on top of `mcp`)
 - Transport: HTTP streamable transport at `/mcp`
-- Observability: Traceloop SDK and OpenTelemetry OTLP export, with `httpx` auto-instrumentation
 - Default port: `8011`
 
-The service starts from `run.py`, initializes Traceloop instrumentation,
-instruments the `httpx` client, and launches the `MCP` FastMCP
- server in a worker thread.
+The service starts from `run.py` and launches the `MCP` FastMCP server in a
+ worker thread.
 
 ## Exposed MCP Tools
 
@@ -53,10 +51,6 @@ The service is configured with environment variables. Values can be supplied
 | `MCP_PORT` | `8011` | Port used by the FastMCP HTTP server. |
 | `MCP_ENDPOINT` | `mcp` in Compose | Service hostname used by other demo services (e.g. `agent`). |
 | `APPLICATION_ENDPOINT` | `frontend:8080` in Compose | Frontend/API endpoint used by the shop tools. |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | `localhost:4317` | OTLP endpoint used by Traceloop/OpenTelemetry. In Compose this points to the OpenTelemetry Collector. |
-| `OTEL_EXPORTER_OTLP_INSECURE` | unset | Set to `true` in Compose for insecure local OTLP export. |
-| `OTEL_RESOURCE_ATTRIBUTES` | inherited | Additional OpenTelemetry resource attributes (Compose adds `service.criticality=low`). |
-| `OTEL_SERVICE_NAME` | `AstronomyShopAgentMCP` | Service name used in telemetry. |
 
 ## Docker Compose Configuration
 
@@ -84,17 +78,6 @@ MCP_PORT=8011
 When `MCP_ENABLED=True` on the agent side, the agent loads its tools from this
  MCP service instead of using its own built-in tools.
 
-## Observability
-
-`run.py` initializes Traceloop with:
-
-- Application name: `mcp`
-- API endpoint: `OTEL_EXPORTER_OTLP_ENDPOINT`, defaulting to `localhost:4317`
-
-The `HTTPXClientInstrumentor` is enabled so that outbound calls to the frontend
- (made by the shop tools) are traced. In Docker Compose, telemetry is sent to
-  the local OpenTelemetry Collector and the service name is set to `mcp`.
-
 ## Local Development
 
 From the repository root, create or activate a Python environment, then
@@ -118,7 +101,6 @@ Run the service locally:
 cd src/mcp
 MCP_PORT=8011 \
 APPLICATION_ENDPOINT=localhost:8080 \
-OTEL_EXPORTER_OTLP_ENDPOINT=localhost:4317 \
 python run.py
 ```
 
@@ -160,7 +142,7 @@ src/mcp/
 |-- README.md
 |-- requirements.txt
 |-- requirements.in
-|-- run.py                              # Entry point: Traceloop init + FastMCP server
+|-- run.py                              # Entry point: FastMCP server
 `-- src/
     `-- mcp_server/
         |-- astronomy_shop_mcp_server.py  # FastMCP server and tool registration

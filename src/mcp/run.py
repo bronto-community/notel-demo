@@ -6,22 +6,13 @@
 
 import asyncio
 import logging
-import os
 
 from dotenv import load_dotenv
-from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from src.mcp_server.astronomy_shop_mcp_server import AstronomyShopMcp
-from traceloop.sdk import Traceloop
 
 logging.basicConfig(level=logging.INFO)
 
 load_dotenv()
-
-Traceloop.init(
-    app_name=os.getenv("OTEL_SERVICE_NAME", "mcp"),
-)
-
-HTTPXClientInstrumentor().instrument()
 
 
 async def start_servers():
