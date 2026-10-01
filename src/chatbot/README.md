@@ -9,12 +9,10 @@ Astronomy Shop demo. It uses [Gradio](https://www.gradio.app/) to render the
 - Runtime: Python 3.14
 - UI framework: Gradio
 - HTTP client: Requests
-- Observability: OpenTelemetry traces exported with OTLP/gRPC
 - Default port: `7860` exposed outside docker via `http://localhost:8080/chatbot/`
 - If chatbot service is running access chatbot UI from [Chatbot UI](http://localhost:8080/chatbot/)
 
-The service starts from `run.py`, configures OpenTelemetry tracing, creates
-a `ChatAgentUI`, and launches a Gradio `ChatInterface`.
+The service starts from `run.py`, creates a `ChatAgentUI`, and launches a Gradio `ChatInterface`.
 
 ## How It Works
 
@@ -62,9 +60,6 @@ The service is configured with environment variables. Values can be supplied
 | `AGENT_ENDPOINT` | `0.0.0.0` in code, `agent` in `.env` | Hostname of the Agent service. |
 | `AGENT_PORT` | `8010` | Port of the Agent service. |
 | `AGENT_CHAT_INTERFACE_TIMEOUT` | `300` | Timeout, in seconds, for calls from the chatbot to the Agent service. |
-| `OTEL_SERVICE_NAME` | `chatbot` in Compose | Service name used in telemetry. |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | otel-collector | OTLP endpoint used by the OpenTelemetry exporter. In Compose this points to the OpenTelemetry Collector. |
-| `OTEL_RESOURCE_ATTRIBUTES` | inherited | Additional OpenTelemetry resource attributes. |
 
 ## Docker Compose Configuration
 
@@ -83,19 +78,6 @@ Important Compose settings:
 
 The frontend proxy receives `CHATBOT_HOST` and `CHATBOT_PORT`, so the chatbot
  can be exposed through the demo UI, usually under `/chatbot`.
-
-## Observability
-
-`run.py` configures a `TracerProvider` with the service name from
- `OTEL_SERVICE_NAME`, defaulting to `chatbot`.
-
-The service instruments outbound HTTP calls made with:
-
-- `requests`
-- `httpx`
-
-Spans are exported through `opentelemetry-exporter-otlp-proto-grpc` to the
-configured OTLP endpoint.
 
 ## Local Development
 
@@ -155,7 +137,5 @@ src/chatbot/
  LLM/Agent backend configuration.
 - **The UI does not load behind the proxy**: Verify `CHATBOT_ROOT_PATH`,
  `CHATBOT_HOST`, and `CHATBOT_PORT`.
-- **No telemetry appears**: Verify `OTEL_EXPORTER_OTLP_ENDPOINT`, collector
- availability, and `OTEL_SERVICE_NAME`.
 - **Port conflicts locally**: Change `CHATBOT_PORT` or stop the process already
 using port `7860`.
