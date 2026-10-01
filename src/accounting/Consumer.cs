@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using Npgsql;
 using Oteldemo;
 using Microsoft.EntityFrameworkCore;
-using System.Diagnostics;
 
 namespace Accounting;
 
@@ -33,7 +32,6 @@ internal class Consumer : BackgroundService
     private readonly ILogger _logger;
     private readonly IConsumer<string, byte[]> _consumer;
     private readonly string? _dbConnectionString;
-    private static readonly ActivitySource MyActivitySource = new("Accounting.Consumer");
 
     public Consumer(ILogger<Consumer> logger)
     {
@@ -60,7 +58,6 @@ internal class Consumer : BackgroundService
             {
                 try
                 {
-                    using var activity = MyActivitySource.StartActivity("order-consumed",  ActivityKind.Internal);
                     var consumeResult = _consumer.Consume(stoppingToken);
                     ProcessMessage(consumeResult.Message);
                 }
