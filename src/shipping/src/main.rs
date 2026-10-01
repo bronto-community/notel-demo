@@ -4,27 +4,20 @@
 use actix_web::{web, App, HttpResponse, HttpServer};
 use open_feature::provider::FeatureProvider;
 use open_feature_flagd::{FlagdOptions, FlagdProvider};
-use opentelemetry_instrumentation_actix_web::{RequestMetrics, RequestTracing};
 use std::env;
 use std::sync::Arc;
 use tracing::info;
+use tracing_subscriber::EnvFilter;
 
-mod telemetry_conf;
-use telemetry_conf::init_otel;
 mod shipping_service;
 use shipping_service::{get_quote, ship_order};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let otel_guard = match init_otel() {
-        Ok(guard) => {
-            info!("Successfully configured OTel");
-            guard
-        }
-        Err(err) => {
-            panic!("Couldn't start OTel: {0}", err);
-        }
-    };
+    tracing_subscriber::fmt()
+        .with_writer(std::io::stdout)
+        .with_env_filter(EnvFilter::new("info"))
+        .init();
 
     let port: u16 = env::var("SHIPPING_PORT")
         .expect("$SHIPPING_PORT is not set")
@@ -59,8 +52,6 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(flag_provider.clone())
-            .wrap(RequestTracing::new())
-            .wrap(RequestMetrics::default())
             .service(get_quote)
             .service(ship_order)
             .route(
@@ -70,8 +61,5 @@ async fn main() -> std::io::Result<()> {
     })
     .bind(&addr)?
     .run()
-    .await?;
-
-    otel_guard.shutdown();
-    Ok(())
+    .await
 }
