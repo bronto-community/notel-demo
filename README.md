@@ -7,10 +7,9 @@ with all of the OpenTelemetry taken out.**
 
 notel-demo is the same microservice shop as the OpenTelemetry Demo, the
 Astronomy Shop: the same services, languages, feature flags and load
-generator. Every piece of observability has been removed. There are no SDKs,
-no agents, no exporters, no instrumentation libraries, no collector and no
-backends. It is a realistic, polyglot application that starts out completely
-uninstrumented.
+generator. All observability has been removed: no SDKs, agents, exporters,
+instrumentation libraries, collector or backends. What's left is a
+realistic polyglot application with no instrumentation at all.
 
 > [!NOTE]
 > **This project is built with AI.** The scripts, skills and docs in this
@@ -21,19 +20,19 @@ uninstrumented.
 > verification run, and each AI-generated commit has an `Assisted-by:`
 > trailer. Review the diff against upstream before relying on it.
 
-This project builds on top of the OpenTelemetry Demo. It is not a fork that
-evolves on its own: it is regenerated from upstream from time to time, so it
+This project builds on the OpenTelemetry Demo. It doesn't develop
+separately. Instead, it is regenerated from upstream every so often, so it
 stays as close to the original as possible. The upstream README is kept as
 [README.original.md](README.original.md).
 
 ## Why
 
-- **Compare uninstrumented and instrumented.** Run notel-demo and the
-  upstream demo side by side, or run notel-demo before and after you
-  instrument it, and see what instrumentation adds in signals, overhead and
-  complexity.
-- **Try instrumentation approaches from zero.** Use it as a clean starting
-  point for:
+- To compare an uninstrumented environment with an instrumented one. Run
+  notel-demo and the upstream demo side by side, or run notel-demo before
+  and after you instrument it, and see what instrumentation adds in
+  signals, overhead and complexity.
+- To try instrumentation approaches from zero. notel-demo is a clean
+  starting point for:
   - zero-code and agent-based approaches: the OpenTelemetry Operator,
     injectors, language agents and eBPF-based instrumentation;
   - vendor agents;
@@ -44,8 +43,8 @@ stays as close to the original as possible. The upstream README is kept as
   .NET auto-instrumentation, `opentelemetry-instrument`, the Node.js
   auto-instrumentations) with manual spans, attributes and metrics. You can
   compare what your approach produces with what upstream produces.
-- **Measure.** Get a baseline for resource usage, latency and startup time
-  without any telemetry pipeline in the way.
+- To get a baseline for resource usage, latency and startup time without
+  a telemetry pipeline running.
 
 ## What is removed and what is kept
 
@@ -70,9 +69,9 @@ Kept:
 - Plain stdout logging. Where logs used to reach stdout only through
   OpenTelemetry, they now use the language's standard logger.
 
-Some third-party libraries still ship the OpenTelemetry API internally. One
-example is the flagd OpenFeature providers; another is Next.js. Without an
-SDK they do nothing, and once you add one they produce spans. These cases
+Some third-party libraries, such as the flagd OpenFeature providers and
+Next.js, still include the OpenTelemetry API. Without an SDK they do
+nothing. Once you add one, they produce spans. These cases
 are listed as "dormant library instrumentation" in
 [notel/BREAKING.md](notel/BREAKING.md), so that their spans are not mistaken
 for demo code when you compare results. flagd itself is a known exception:
@@ -100,8 +99,8 @@ If port 8080 is taken, export `ENVOY_PORT` with another port first.
 
 ## How it works
 
-Each notel release is the upstream demo at a specific commit, followed by a
-small, readable stack of commits:
+Each notel release is the upstream demo at a specific commit, plus these
+commits:
 
 1. `notel: tooling`, with the scripts, skills and decision log.
 2. `notel: delete observability components`.
@@ -126,9 +125,9 @@ upstream commit:
   - `notel-strip-service` strips one service.
   - `notel-verify` checks the result.
 - `notel-verify` builds and runs the full stack under load. It checks that
-  the shop still works, scans for leftover instrumentation, and runs a
-  silence check: a canary plus packet capture inside every container, which
-  confirms that nothing tries to send telemetry.
+  the shop still works and scans for leftover instrumentation. It also runs
+  a silence check, a canary plus packet capture inside every container, to
+  catch anything that tries to send telemetry.
 - [notel/DECISIONS.md](notel/DECISIONS.md) records every decision about what
   to remove, keep or replace.
 - [notel/BREAKING.md](notel/BREAKING.md) lists every place where removing
@@ -148,8 +147,8 @@ from the demo, for example:
 - improvements to the strip scripts, skills or verification;
 - fixes for behavior that breaks when observability is removed.
 
-Some of those couplings are better fixed upstream. BREAKING.md marks them as
-upstream candidates.
+Some of those breakages are better fixed upstream. BREAKING.md marks them
+as upstream candidates.
 
 ## License
 
