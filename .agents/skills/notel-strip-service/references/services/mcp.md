@@ -31,9 +31,13 @@
 
 ## Verify
 
-- Lockfile, from the repo root (header paths are repo-relative) with
+- Lockfile, run from the directory the header paths imply (upstream has
+  switched between repo-relative and service-relative; since 7ea09b86 they
+  are relative, so run from `src/mcp`), starting from upstream's new
+  `requirements.txt` so the pins are kept, with
   `python:3.14-slim@sha256:51dafde81dbdb6ebde285137a295cf18a47ca95234fe388a343719cb97305b3d`,
-  `pip==25.2 pip-tools==7.5.2`, same flags as the header.
+  `pip==25.2 pip-tools==7.5.2`, same flags as the header. Restore the header if pip-tools adds
+  `--no-index`.
 - `docker build --load -t notel-mcp:test -f src/mcp/Dockerfile .`
 - `docker run --rm --entrypoint pip notel-mcp:test list | grep -Ei 'opentelemetry|traceloop|prometheus'`
   prints only `opentelemetry-api`.
