@@ -11,22 +11,6 @@ import io.grpc.*;
 import io.grpc.health.v1.HealthCheckResponse.ServingStatus;
 import io.grpc.protobuf.services.*;
 import io.grpc.stub.StreamObserver;
-import io.opentelemetry.api.GlobalOpenTelemetry;
-import io.opentelemetry.api.OpenTelemetry;
-import io.opentelemetry.api.baggage.Baggage;
-import io.opentelemetry.api.common.AttributeKey;
-import io.opentelemetry.api.common.Attributes;
-import io.opentelemetry.api.metrics.LongCounter;
-import io.opentelemetry.api.metrics.Meter;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.StatusCode;
-import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.context.Context;
-import io.opentelemetry.context.Scope;
-import io.opentelemetry.instrumentation.annotations.SpanAttribute;
-import io.opentelemetry.instrumentation.annotations.WithSpan;
-import io.prometheus.metrics.core.metrics.Counter;
-import io.prometheus.metrics.exporter.httpserver.HTTPServer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -59,40 +43,8 @@ public final class AdService {
 
   private Server server;
   private HealthStatusManager healthMgr;
-  private HTTPServer prometheusServer;
-
-  // DEMO: this counter and its `/metrics` HTTP exporter use the Prometheus
-  // Java client library rather than the OpenTelemetry SDK. It is here to
-  // illustrate how non-OTel custom metrics (e.g. existing Prometheus
-  // instrumentation that an organization already owns) can be ingested into
-  // an OpenTelemetry pipeline via the Collector's `prometheus` receiver --
-  // a common bridging pattern during OTel adoption.
-  //
-  // Recommendation: this is a *transitional* pattern. New custom metrics
-  // should be created directly with the OpenTelemetry SDK (see the
-  // `adRequestsCounter` below), and existing Prometheus-client metrics
-  // should be migrated over time. See `src/ad/README.md` for details.
-  private static final Counter adsServedCounter =
-      Counter.builder()
-          .name("demo_ad_served_total")
-          .help("Total number of ads served, labeled by category")
-          .labelNames("category")
-          .register();
 
   private static final AdService service = new AdService();
-  private static final Tracer tracer = GlobalOpenTelemetry.getTracer("ad");
-  private static final Meter meter = GlobalOpenTelemetry.getMeter("ad");
-
-  private static final LongCounter adRequestsCounter =
-      meter
-          .counterBuilder("demo.ad.requests")
-          .setDescription("Counts ad requests by request and response type")
-          .build();
-
-  private static final AttributeKey<String> adRequestTypeKey =
-      AttributeKey.stringKey("demo.ad.request_type");
-  private static final AttributeKey<String> adResponseTypeKey =
-      AttributeKey.stringKey("demo.ad.response_type");
 
   private void start() throws IOException {
     int port =
@@ -102,18 +54,9 @@ public final class AdService {
                     () ->
                         new IllegalStateException(
                             "environment vars: AD_PORT must not be null")));
-    int prometheusPort =
-        Integer.parseInt(Optional.ofNullable(System.getenv("AD_PROMETHEUS_PORT")).orElse("9465"));
-    prometheusServer = HTTPServer.builder().port(prometheusPort).buildAndStart();
-    logger.info(
-        "Prometheus metrics endpoint started, listening on " + prometheusServer.getPort() + "/metrics");
     healthMgr = new HealthStatusManager();
 
-    // Create a flagd instance with OpenTelemetry
-    FlagdOptions options =
-        FlagdOptions.builder()
-            .withGlobalTelemetry(true)
-            .build();
+    FlagdOptions options = FlagdOptions.builder().build();
 
     FlagdProvider flagdProvider = new FlagdProvider(options);
     // Set flagd as the OpenFeature Provider
@@ -144,19 +87,6 @@ public final class AdService {
       healthMgr.clearStatus("");
       server.shutdown();
     }
-    if (prometheusServer != null) {
-      prometheusServer.stop();
-    }
-  }
-
-  private enum AdRequestType {
-    TARGETED,
-    NOT_TARGETED
-  }
-
-  private enum AdResponseType {
-    TARGETED,
-    RANDOM
   }
 
   private static class AdServiceImpl extends oteldemo.AdServiceGrpc.AdServiceImplBase {
@@ -179,60 +109,27 @@ public final class AdService {
     public void getAds(AdRequest req, StreamObserver<AdResponse> responseObserver) {
       AdService service = AdService.getInstance();
 
-      // get the current span in context
-      Span span = Span.current();
       try {
         List<Ad> allAds = new ArrayList<>();
-        AdRequestType adRequestType;
-        AdResponseType adResponseType;
-
-        Baggage baggage = Baggage.fromContextOrNull(Context.current());
         MutableContext evaluationContext = new MutableContext();
-        if (baggage != null) {
-          final String sessionId = baggage.getEntryValue("session.id");
-          span.setAttribute("session.id", sessionId);
-          evaluationContext.setTargetingKey(sessionId);
-          evaluationContext.add("session", sessionId);
-          final String enduserId = baggage.getEntryValue("enduser.id");
-          if (enduserId != null) {
-            span.setAttribute("enduser.id", enduserId);
-          }
-        } else {
-          logger.info("no baggage found in context");
-        }
 
         CPULoad cpuload = CPULoad.getInstance();
         cpuload.execute(ffClient.getBooleanValue(AD_HIGH_CPU_FEATURE_FLAG, false, evaluationContext));
 
-        span.setAttribute("demo.ad.context_keys", req.getContextKeysList().toString());
-        span.setAttribute("demo.ad.context_keys.count", req.getContextKeysCount());
         if (req.getContextKeysCount() > 0) {
           logger.info("Targeted ad request received for " + req.getContextKeysList());
           for (int i = 0; i < req.getContextKeysCount(); i++) {
             Collection<Ad> ads = service.getAdsByCategory(req.getContextKeys(i));
             allAds.addAll(ads);
           }
-          adRequestType = AdRequestType.TARGETED;
-          adResponseType = AdResponseType.TARGETED;
         } else {
           logger.info("Non-targeted ad request received, preparing random response.");
           allAds = service.getRandomAds();
-          adRequestType = AdRequestType.NOT_TARGETED;
-          adResponseType = AdResponseType.RANDOM;
         }
         if (allAds.isEmpty()) {
           // Serve random ads.
           allAds = service.getRandomAds();
-          adResponseType = AdResponseType.RANDOM;
         }
-        span.setAttribute("demo.ad.count", allAds.size());
-        span.setAttribute("demo.ad.request_type", adRequestType.name());
-        span.setAttribute("demo.ad.response_type", adResponseType.name());
-
-        adRequestsCounter.add(
-            1,
-            Attributes.of(
-                adRequestTypeKey, adRequestType.name(), adResponseTypeKey, adResponseType.name()));
 
         // Throw 1/10 of the time to simulate a failure when the feature flag is enabled
         if (ffClient.getBooleanValue(AD_FAILURE, false, evaluationContext) && random.nextInt(10) == 0) {
@@ -249,9 +146,6 @@ public final class AdService {
         responseObserver.onNext(reply);
         responseObserver.onCompleted();
       } catch (StatusRuntimeException e) {
-        span.addEvent(
-            "Error", Attributes.of(AttributeKey.stringKey("exception.message"), e.getMessage()));
-        span.setStatus(StatusCode.ERROR);
         logger.log(Level.WARN, "GetAds Failed with status {}", e.getStatus());
         responseObserver.onError(e);
       }
@@ -260,12 +154,8 @@ public final class AdService {
 
   private static final ImmutableListMultimap<String, Ad> adsMap = createAdsMap();
 
-  @WithSpan("getAdsByCategory")
-  private Collection<Ad> getAdsByCategory(@SpanAttribute("demo.ad.category") String category) {
-    Collection<Ad> ads = adsMap.get(category);
-    Span.current().setAttribute("demo.ad.count", ads.size());
-    adsServedCounter.labelValues(category).inc(ads.size());
-    return ads;
+  private Collection<Ad> getAdsByCategory(String category) {
+    return adsMap.get(category);
   }
 
   private static final Random random = new Random();
@@ -274,21 +164,9 @@ public final class AdService {
 
     List<Ad> ads = new ArrayList<>(MAX_ADS_TO_SERVE);
 
-    // create and start a new span manually
-    Span span = tracer.spanBuilder("getRandomAds").startSpan();
-
-    // put the span into context, so if any child span is started the parent will be set properly
-    try (Scope ignored = span.makeCurrent()) {
-
-      Collection<Ad> allAds = adsMap.values();
-      for (int i = 0; i < MAX_ADS_TO_SERVE; i++) {
-        ads.add(Iterables.get(allAds, random.nextInt(allAds.size())));
-      }
-      span.setAttribute("demo.ad.count", ads.size());
-      adsServedCounter.labelValues("random").inc(ads.size());
-
-    } finally {
-      span.end();
+    Collection<Ad> allAds = adsMap.values();
+    for (int i = 0; i < MAX_ADS_TO_SERVE; i++) {
+      ads.add(Iterables.get(allAds, random.nextInt(allAds.size())));
     }
 
     return ads;
