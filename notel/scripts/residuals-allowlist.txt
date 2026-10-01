@@ -91,7 +91,7 @@ src/recommendation/demo_pb2.py :: \\x[0-9a-f]{2}oteldemo(?=\\)|genproto/oteldemo
 src/frontend/*.ts :: \botel(Blue|Yellow|Gray|Red)\b :: theme colour names (DECISIONS: Naming)
 src/frontend/*.tsx :: <title>Otel Demo - :: page titles (DECISIONS: Naming)
 src/frontend/components/Header/Header.styled.ts :: /images/opentelemetry-demo-logo\.png :: logo path (branding)
-src/frontend/components/Footer/Footer.tsx :: OpenTelemetry \(<a href="https://github\.com/open-telemetry/opentelemetry-demo"> :: footer branding and source link, kept per DECISIONS
+src/frontend/components/Footer/Footer.tsx :: based on the OpenTelemetry Demo \(<a href="https://github\.com/open-telemetry/opentelemetry-demo"> :: notel footer credits the upstream project and links its source
 src/payment/index.js :: \botelDemoPackage\b :: variable holding the loaded oteldemo proto package
 src/payment/package.json :: "repository": "https://github\.com/opentelemetry/opentelemetry-demo" :: repository URL (branding)
 src/quote/composer.json :: part of OpenTelemetry Demo :: composer description (branding)

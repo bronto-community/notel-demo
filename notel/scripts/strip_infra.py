@@ -8,6 +8,7 @@ already stripped tree every edit is a no-op. See notel/scripts/README.md.
 """
 
 import argparse
+import hashlib
 import re
 import shutil
 import subprocess
@@ -1201,6 +1202,48 @@ def strip_docs(ctx):
 # Main
 # --------------------------------------------------------------------------
 
+
+# --------------------------------------------------------------------------
+# notel branding (maintainer exception to "keep branding", see DECISIONS.md)
+# --------------------------------------------------------------------------
+BRAND_ASSETS = {
+    "src/image-provider/static/opentelemetry-demo-logo.png": "notel/assets/notel-demo-logo.png",
+}
+# sha256 of the upstream original each asset was derived from; a mismatch means
+# upstream changed it and the asset must be regenerated (notel/assets/make_logo.py).
+BRAND_UPSTREAM_SHA256 = {
+    "src/image-provider/static/opentelemetry-demo-logo.png": "7e974e556ed1ebc53ed028d9e61bba9462b997d774ba039da9b200155e7eb0f6",
+}
+FOOTER_OLD = ('@ {currentYear} OpenTelemetry (<a href="https://github.com/open-telemetry/opentelemetry-demo">'
+              'Source Code</a>)')
+FOOTER_NEW = ('@ {currentYear} notel-demo (<a href="https://github.com/bronto-community/notel-demo">Source Code</a>), '
+              'based on the OpenTelemetry Demo '
+              '(<a href="https://github.com/open-telemetry/opentelemetry-demo">Source Code</a>)')
+
+
+def strip_branding(ctx):
+    replace_text(ctx, "src/frontend/components/Footer/Footer.tsx", FOOTER_OLD, FOOTER_NEW,
+                 "footer credits notel-demo")
+
+
+def pending_assets(root):
+    out = []
+    for target, source in BRAND_ASSETS.items():
+        src, dst = root / source, root / target
+        if not src.is_file():
+            raise StripError(f"{source}: branding asset missing")
+        if not dst.is_file():
+            raise StripError(f"{target}: expected upstream asset not found")
+        current = dst.read_bytes()
+        if current == src.read_bytes():
+            continue
+        if hashlib.sha256(current).hexdigest() != BRAND_UPSTREAM_SHA256[target]:
+            raise StripError(f"{target}: upstream asset changed; regenerate {source} with notel/assets/make_logo.py "
+                             "and update BRAND_UPSTREAM_SHA256")
+        out.append((src, dst, target))
+    return out
+
+
 def run(root, digest_mode, check_only):
     strict = any((root / p).exists() for p in DELETE_PATHS)
     ctx = Ctx(root, strict)
@@ -1220,7 +1263,10 @@ def run(root, digest_mode, check_only):
         strip_github(ctx)
         strip_registry(ctx)
         strip_docs(ctx)
+        strip_branding(ctx)
+        assets = pending_assets(root)
     except StripError as e:
+        assets = []
         ctx.errors.append(str(e))
 
     deletions = [p for p in DELETE_PATHS if (root / p).exists() or (root / p).is_symlink()]
@@ -1229,6 +1275,8 @@ def run(root, digest_mode, check_only):
         print(f"delete: {p}")
     for line in ctx.log:
         print(f"edit: {line}")
+    for _, _, target in assets:
+        print(f"asset: {target}")
     if ctx.errors:
         print("\nERRORS (nothing was written):", file=sys.stderr)
         for e in ctx.errors:
@@ -1237,7 +1285,7 @@ def run(root, digest_mode, check_only):
     changed = ctx.changed()
     if check_only:
         print(f"\ncheck only: {len(deletions)} deletions and {len(changed)} file edits pending")
-        return 1 if (deletions or changed) else 0
+        return 1 if (deletions or changed or assets) else 0
 
     for p in deletions:
         target = root / p
@@ -1251,6 +1299,8 @@ def run(root, digest_mode, check_only):
             parent = parent.parent
     for rel, text in changed.items():
         (root / rel).write_text(text, encoding="utf-8")
+    for src, dst, _ in assets:
+        shutil.copyfile(src, dst)
     print(f"\nwrote {len(changed)} files, deleted {len(deletions)} paths")
 
     hits = check_residuals.scan(root, [p for p in SCOPE_PATHS if (root / p).exists()])
