@@ -35,6 +35,10 @@
 - `mix deps.unlock --unused` without fetched deps unlocks every transitive
   dep (it removed plug, mime, telemetry, ...). Run `mix deps.get` first, in a
   scratch copy so `deps/` does not land in the repo.
+  The scratch copy needs only `mix.exs`, `mix.lock` and `config/`. The slim
+  Elixir image has no `git`, which `mix deps.get` needs for `heroicons`;
+  `apt-get install git` first. On a sync, take upstream's `mix.lock` when
+  the cherry-pick conflicts and rerun both steps.
 - `phoenix_live_dashboard` depends on `telemetry_metrics` (non-optional), so
   `telemetry_metrics` stays in mix.lock as a transitive dep after the direct
   dep is removed. It is a BEAM `:telemetry` helper, not OTel.

@@ -12,15 +12,7 @@ defmodule FlagdUi.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps(),
-      releases: [
-        flagd_ui: [
-          applications: [
-            opentelemetry_exporter: :permanent,
-            opentelemetry: :temporary
-          ]
-        ]
-      ]
+      deps: deps()
     ]
   end
 
@@ -61,18 +53,11 @@ defmodule FlagdUi.MixProject do
        depth: 1},
       {:swoosh, "~> 1.28.0"},
       {:req, "~> 0.7.2"},
-      {:telemetry_metrics, "~> 1.2.0"},
-      {:telemetry_poller, "~> 1.3.0"},
       {:gettext, "~> 1.0.2"},
       {:jason, "~> 1.4.5"},
       {:dns_cluster, "~> 0.3.0"},
       {:bandit, "~> 1.12.0"},
-      {:credo, "~> 1.7.19", only: [:dev, :test], runtime: false},
-      {:opentelemetry, "~> 1.7.0"},
-      {:opentelemetry_api, "~> 1.5.0"},
-      {:opentelemetry_exporter, "~> 1.11.0"},
-      {:opentelemetry_phoenix, "~> 2.0.1"},
-      {:opentelemetry_bandit, "~> 0.3.0"}
+      {:credo, "~> 1.7.19", only: [:dev, :test], runtime: false}
     ]
   end
 

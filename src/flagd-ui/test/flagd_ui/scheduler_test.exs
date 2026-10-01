@@ -74,10 +74,22 @@ defmodule FlagdUi.SchedulerTest do
       assert {"cartFailure", ["10%", "100%", "25%", "50%", "75%", "90%"]} in flags
     end
 
-    test "excludes emitRawPii, which is marked non-schedulable in metadata" do
-      flags = Storage |> GenServer.call(:read) |> Scheduler.schedulable_flags()
+    test "excludes flags marked non-schedulable in metadata" do
+      config = %{
+        "flags" => %{
+          "optedOut" => %{
+            "defaultVariant" => "off",
+            "metadata" => %{"schedulable" => false},
+            "variants" => %{"off" => false, "on" => true}
+          },
+          "optedIn" => %{
+            "defaultVariant" => "off",
+            "variants" => %{"off" => false, "on" => true}
+          }
+        }
+      }
 
-      refute Enum.any?(flags, fn {name, _} -> name == "emitRawPii" end)
+      assert Scheduler.schedulable_flags(config) == [{"optedIn", ["on"]}]
     end
 
     test "tolerates a configuration without flags" do
