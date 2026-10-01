@@ -12,12 +12,11 @@ The Agent service provides an AI assistant for the OpenTelemetry Astronomy Shop
 - Agent framework: LangChain and LangGraph prebuilt components
 - LLM client: `langchain_openai.ChatOpenAI` and support non OpenAI models via
 LiteLLM Client
-- Observability: Traceloop SDK and OpenTelemetry OTLP export
 - Optional tool source: Model Context Protocol (MCP)
 - Default port: `8010`
 
-The service starts from `run.py`, initializes Traceloop instrumentation, creates
- an `Agent`, and launches a FastAPI server.
+The service starts from `run.py`, initializes feature flags, creates an `Agent`,
+ and launches a FastAPI server.
 
 ## Service API
 
@@ -75,10 +74,6 @@ through Docker Compose, `.env`, `.env.override`, or the local shell environment.
 | `MCP_ENABLED` | `False` | Enables tool loading from the MCP service when set to `True`. |
 | `MCP_ENDPOINT` | `0.0.0.0` in code, `mcp` in Compose | Hostname for the MCP service. |
 | `MCP_PORT` | `8011` | Port for the MCP service. |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | `localhost:4317` | OTLP endpoint used by Traceloop/OpenTelemetry. In Compose this points to the OpenTelemetry Collector. |
-| `OTEL_EXPORTER_OTLP_INSECURE` | unset | Set to `true` in Compose for insecure local OTLP export. |
-| `OTEL_RESOURCE_ATTRIBUTES` | inherited | Additional OpenTelemetry resource attributes. |
-| `OTEL_SERVICE_NAME` | `AstronomyShopAgent` | Service name used in telemetry. |
 
 > Do not commit real API keys. Prefer local overrides or secret management for `API_KEY`.
 > Note that VCR file is created using `LLM_MODEL` and is case sensitive.
@@ -96,9 +91,9 @@ Important Compose settings:
 - Restart policy: `unless-stopped`
 - Exposed port: `${AGENT_PORT}`
 - Depends on:
-  - `jaeger`
-  - `otel-collector`
   - `product-catalog`
+  - `mcp`
+  - `flagd`
 
 The Compose configuration also enables MCP by default for this service with:
 
@@ -135,22 +130,6 @@ http://${MCP_ENDPOINT}:${MCP_PORT}/mcp
 
 Tools are loaded dynamically using `langchain_mcp_adapters.tools.load_mcp_tools`.
  In this mode, the built-in tools are not used.
-
-## Observability
-
-`run.py` initializes Traceloop with:
-
-- Application name: `agent`
-- API endpoint: `OTEL_EXPORTER_OTLP_ENDPOINT`, defaulting to `localhost:4317`
-
-The `run_agent` method is decorated as a Traceloop workflow named:
-
-```text
-astronomy_shop_agent_workflow
-```
-
-In Docker Compose, telemetry is sent to the local OpenTelemetry Collector and
- the service name is set to `agent`.
 
 ## Local Development
 
@@ -245,7 +224,5 @@ and that the `mcp` service is running.
 - **Built-in tools cannot reach the shop API**: Verify `APPLICATION_ENDPOINT`.
  Use `frontend:8080` in Docker Compose and `localhost:8080` for local
   host-based development.
-- **No telemetry appears**: Verify `OTEL_EXPORTER_OTLP_ENDPOINT`,
-collector availability, and `OTEL_SERVICE_NAME`.
 - **TLS errors from the LLM provider**: Check certificates and `LLM_TLS_VERIFY`.
  Avoid disabling TLS verification outside local trusted environments.
