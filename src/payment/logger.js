@@ -6,7 +6,7 @@ const pino = require('pino')
 const logger = pino({
   mixin() {
     return {
-      'service.name': process.env['OTEL_SERVICE_NAME'],
+      'service.name': 'payment',
     }
   },
   formatters: {
