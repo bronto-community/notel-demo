@@ -39,11 +39,7 @@ jobs:
               - '.env'
               - 'compose*.yaml'
               - 'src/flagd/**'
-              - 'src/grafana/**'
-              - 'src/jaeger/**'
-              - 'src/otel-collector/**'
               - 'src/postgresql/**'
-              - 'src/prometheus/**'
 
       - name: Add docs-update-required label
         if: steps.file_changes.outputs.docsUpdateRequired == 'true'

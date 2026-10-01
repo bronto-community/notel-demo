@@ -21,21 +21,11 @@ on:
         default: 'dev'
         required: false
         type: string
-      dockerhub_repo:
-        description: Docker Hub repository
-        default: 'otel/demo'
-        required: false
-        type: string
       ghcr_repo:
         description: GHCR repository
-        default: 'ghcr.io/open-telemetry/demo'
+        default: 'ghcr.io/bronto-community/notel-demo'
         required: false
         type: string
-    secrets:
-      DOCKER_USERNAME:
-        required: false
-      DOCKER_PASSWORD:
-        required: false
 
 permissions:
   contents: read
@@ -134,16 +124,8 @@ jobs:
             tag_suffix: load-generator
             context: ./
             setup-qemu: true
-          - file: ./src/opamp-server/Dockerfile
-            tag_suffix: opamp-server
-            context: ./
-            setup-qemu: true
           - file: ./src/mcp/Dockerfile
             tag_suffix: mcp
-            context: ./
-            setup-qemu: true
-          - file: ./src/opensearch/Dockerfile
-            tag_suffix: opensearch
             context: ./
             setup-qemu: true
           - file: ./src/payment/Dockerfile
@@ -164,10 +146,6 @@ jobs:
             setup-qemu: true
           - file: ./src/shipping/Dockerfile
             tag_suffix: shipping
-            context: ./
-            setup-qemu: true
-          - file: ./src/telemetry-docs/Dockerfile
-            tag_suffix: telemetry-docs
             context: ./
             setup-qemu: true
 
@@ -270,12 +248,6 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ github.token }}
         if: ${{ steps.check_changes.outputs.skip == 'false' && inputs.push && !github.event.repository.fork }}
-      - name: Log in to Docker Hub
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4.6.0
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-        if: ${{ steps.check_changes.outputs.skip == 'false' && inputs.push && !github.event.repository.fork }}
       - name: Set up QEMU
         if: ${{ steps.check_changes.outputs.skip == 'false' && matrix.file_tag.setup-qemu }}
         uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1  # v4.4.0
@@ -296,13 +268,7 @@ jobs:
           file: ${{ matrix.file_tag.file }}
           platforms: linux/amd64,linux/arm64
           push: ${{ inputs.push && !github.event.repository.fork }}
-          build-args: |
-            OTEL_JAVA_AGENT_VERSION=${{ env.OTEL_JAVA_AGENT_VERSION }}
-            OPENTELEMETRY_CPP_VERSION=${{ env.OPENTELEMETRY_CPP_VERSION }}
-            OPAMP_GO_REF=${{ env.OPAMP_GO_REF }}
           tags: |
-            ${{ inputs.dockerhub_repo }}:${{ inputs.version }}-${{matrix.file_tag.tag_suffix }}
-            ${{ inputs.dockerhub_repo }}:latest-${{matrix.file_tag.tag_suffix }}
             ${{ inputs.ghcr_repo }}:${{ inputs.version }}-${{ matrix.file_tag.tag_suffix }}
             ${{ inputs.ghcr_repo }}:latest-${{ matrix.file_tag.tag_suffix }}
           cache-from: type=gha,scope=${{ matrix.file_tag.tag_suffix }}

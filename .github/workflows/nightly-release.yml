@@ -21,6 +21,3 @@ jobs:
       push: true
       force_build: true
       version: nightly
-    secrets:
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}

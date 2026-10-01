@@ -92,11 +92,6 @@ multi-ecosystem-groups:
       interval: "weekly"
       day: "tuesday"
       time: "03:50"
-  src-telemetry-docs:
-    schedule:
-      interval: "weekly"
-      day: "tuesday"
-      time: "03:50"
 updates:
   - package-ecosystem: "github-actions"
     cooldown:
@@ -333,19 +328,6 @@ updates:
     patterns:
       - "*"
     multi-ecosystem-group: "src-load-generator"
-  - package-ecosystem: "docker"
-    cooldown:
-      default-days: 3
-    directories:
-      - "/src/opensearch/**"
-    groups:
-      src-opensearch:
-        patterns:
-          - "*"
-    schedule:
-      interval: "weekly"
-      day: "tuesday"
-      time: "03:50"
   - package-ecosystem: "npm"  # zizmor: ignore[dependabot-cooldown] cooldown prevents multi-ecosystem batching
     directories:
       - "/src/payment/**"
@@ -432,15 +414,3 @@ updates:
     patterns:
       - "*"
     multi-ecosystem-group: "src-shipping"
-  - package-ecosystem: "pip"  # zizmor: ignore[dependabot-cooldown] cooldown prevents multi-ecosystem batching
-    directories:
-      - "/src/telemetry-docs/**"
-    patterns:
-      - "*"
-    multi-ecosystem-group: "src-telemetry-docs"
-  - package-ecosystem: "docker"  # zizmor: ignore[dependabot-cooldown] cooldown prevents multi-ecosystem batching
-    directories:
-      - "/src/telemetry-docs/**"
-    patterns:
-      - "*"
-    multi-ecosystem-group: "src-telemetry-docs"

@@ -85,18 +85,7 @@ make start
 ### Using Podman Instead of Docker
 
 The demo supports both Docker and Podman. Docker is the default container
-runtime. To use Podman instead, first set the `DOCKER_SOCK` to use podman,
-in `.env.override` uncomment `# DOCKER_SOCK=/run/user/1000/podman/podman.sock`
-This is needed for the otel-collector to work correctly. For example, you should
-have:
-
-```sh
-# Rootless podman: use the podman Docker-compatible API socket so the collector's
-# docker resource detector and docker_stats receiver can connect.
-DOCKER_SOCK=/run/user/1000/podman/podman.sock
-```
-
-Next you can run podman with:
+runtime. To use Podman instead, run:
 
 ```sh
 DOCKER_COMPOSE_CMD="podman compose" make start
@@ -120,20 +109,13 @@ Then you can simply run `make start` and it will use Podman.
 - Ensure the Podman socket is running: `systemctl --user start podman.socket`
 - You can check the Podman socket status with: `systemctl --user status podman.socket`
 
-### Verify the Webstore & Telemetry
+### Verify the Webstore
 
 Once the images are built and containers are started, visit:
 
 - **Webstore**: [http://localhost:8080/](http://localhost:8080/)
-- **Jaeger**: [http://localhost:8080/jaeger/ui/](http://localhost:8080/jaeger/ui/)
-- **Grafana**: [http://localhost:8080/grafana/](http://localhost:8080/grafana/)
-- **OpAMP**: [http://localhost:8080/opamp/](http://localhost:8080/opamp/)
 - **Feature Flags UI**: [http://localhost:8080/feature/](http://localhost:8080/feature/)
 - **Load Generator UI**: [http://localhost:8080/loadgen/](http://localhost:8080/loadgen/)
-
-The OpAMP UI shows the OpenTelemetry Collector as a managed agent. Click the
-collector instance ID to view its health status, version, attributes, and
-effective configuration.
 
 ## Troubleshooting Common Issues
 
@@ -296,7 +278,7 @@ make restart service=shipping
 
 If the demo is not already running, or your change affects shared Docker Compose
 configuration, environment variables, generated protobufs, cross-service
-contracts, or collector/frontend-proxy configuration, start the demo stack after
+contracts, or frontend-proxy configuration, start the demo stack after
 building the affected service:
 
 ```sh
@@ -305,11 +287,10 @@ make start
 ```
 
 Verify the change using the path that matches what you changed: the Webstore UI,
-direct service endpoints, container logs, Jaeger traces, Grafana dashboards, or
-other telemetry views as appropriate.
+direct service endpoints, or container logs as appropriate.
 
 Update the relevant [documentation][docs] before opening the PR for user-visible
-behavior, telemetry, configuration, or workflow changes.
+behavior, configuration, or workflow changes.
 
 #### Adding a changelog entry
 
@@ -319,7 +300,7 @@ The `CHANGELOG.md` is generated from individual fragment files under
 Because each PR adds its own file instead of editing a shared section, changelog
 merge conflicts are avoided.
 
-For any user-visible behavior, telemetry, configuration, or workflow change:
+For any user-visible behavior, configuration, or workflow change:
 
 1. Create a fragment for your branch: `make chlog-new`. This copies
    [`.chloggen/TEMPLATE.yaml`](./.chloggen/TEMPLATE.yaml) to
