@@ -47,7 +47,7 @@ defmodule FlagdUiWeb.Router do
     scope "/dev" do
       pipe_through :browser
 
-      live_dashboard "/dashboard", metrics: FlagdUiWeb.Telemetry
+      live_dashboard "/dashboard"
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
   end
