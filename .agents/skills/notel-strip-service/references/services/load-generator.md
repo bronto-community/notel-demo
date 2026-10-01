@@ -53,7 +53,10 @@
 
 ## Verify
 
-- Lockfile, from the repo root with
+- Lockfile, run from the directory the header paths imply (upstream has
+  switched between repo-relative and service-relative; since 7ea09b86 they
+  are relative, so run from `src/load-generator`), starting from upstream's
+  new `requirements.txt` so the pins are kept, with
   `python:3.14.7-slim-bookworm@sha256:82bc3c539b8813ada9d68c63b40158fa002f7f33de9bf3312a3dfdc0620dff56`,
   `pip==25.2 pip-tools==7.5.2`, same flags as the header. Restore the header
   if pip-tools adds `--no-index`.
