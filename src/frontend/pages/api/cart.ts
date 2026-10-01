@@ -6,7 +6,7 @@ import CartGateway from '../../gateways/rpc/Cart.gateway';
 import { AddItemRequest, Empty } from '../../protos/demo';
 import ProductCatalogService from '../../services/ProductCatalog.service';
 import { IProductCart, IProductCartItem } from '../../types/Cart';
-import InstrumentationMiddleware from '../../utils/telemetry/InstrumentationMiddleware';
+import ApiLogMiddleware from '../../utils/ApiLogMiddleware';
 
 type TResponse = IProductCart | Empty;
 
@@ -53,4 +53,4 @@ const handler: NextApiHandler<TResponse> = async ({ method, body, query }, res) 
   }
 };
 
-export default InstrumentationMiddleware(handler);
+export default ApiLogMiddleware(handler);

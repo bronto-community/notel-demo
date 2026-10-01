@@ -3,9 +3,8 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import type { ServiceError } from '@grpc/grpc-js';
-import { context, Exception, SpanStatusCode, trace } from '@opentelemetry/api';
-import InstrumentationMiddleware from '../../utils/telemetry/InstrumentationMiddleware';
-import logger from '../../utils/telemetry/logger';
+import ApiLogMiddleware from '../../utils/ApiLogMiddleware';
+import logger from '../../utils/logger';
 import CheckoutGateway from '../../gateways/rpc/Checkout.gateway';
 import { Empty, PlaceOrderRequest, PlaceOrderResponse } from '../../protos/demo';
 import { IProductCheckoutItem, IProductCheckout } from '../../types/Cart';
@@ -27,10 +26,6 @@ const handler = async ({ method, body, query }: NextApiRequest, res: NextApiResp
       try {
         placeOrderResponse = await CheckoutGateway.placeOrder(orderData);
       } catch (error) {
-        const span = trace.getSpan(context.active());
-        span?.recordException(error as Exception);
-        span?.setStatus({ code: SpanStatusCode.ERROR });
-
         const details = (error as ServiceError)?.details || (error as Error)?.message || '';
 
         if (details.startsWith(PAYMENT_FAILURE_PREFIX)) {
@@ -74,4 +69,4 @@ const handler = async ({ method, body, query }: NextApiRequest, res: NextApiResp
   }
 };
 
-export default InstrumentationMiddleware(handler);
+export default ApiLogMiddleware(handler);
