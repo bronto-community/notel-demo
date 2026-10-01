@@ -29,7 +29,6 @@ from src.agents.tools import (
     get_supported_currencies,
     list_products,
 )
-from traceloop.sdk.decorators import workflow
 
 
 class ChatRequest(BaseModel):
@@ -79,7 +78,6 @@ class Agent:
             ]
             return [tool(t) for t in tool_list]
 
-    @workflow(name="astronomy_shop_agent_workflow")
     async def run_agent(self, input_prompt, history: List[Dict] | None = None):
         model = ChatLLM()
         tools = await self.get_tool_list()
