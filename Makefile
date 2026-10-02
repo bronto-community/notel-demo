@@ -19,18 +19,15 @@ DOCKER_COMPOSE_ENV=--env-file .env --env-file .env.override
 # Compose file layers — combine with -f flags for the desired configuration:
 #   Core (minimal):             compose.yaml
 #   Full (adds Kafka group):    compose.yaml + compose.full.yaml
-#   With observability stack:   + compose.observability.yaml
 #   With extras customizations: + compose.extras.yaml (always last)
 DOCKER_COMPOSE_FILES_CORE=-f compose.yaml
 DOCKER_COMPOSE_FILES_FULL=$(DOCKER_COMPOSE_FILES_CORE) -f compose.full.yaml
-DOCKER_COMPOSE_FILES_OBSERVABILITY=-f compose.observability.yaml
-DOCKER_COMPOSE_FILES_PROFILING=-f compose.profiling.yaml
 DOCKER_COMPOSE_FILES_EXTRAS=-f compose.extras.yaml
 DOCKER_COMPOSE_FILES_TESTS=-f compose.tests.yaml
 DOCKER_COMPOSE_FILES_AGENT=-f compose.agent.yaml
 
-# Default: full demo + observability stack + extras stub
-DOCKER_COMPOSE_FILES=$(DOCKER_COMPOSE_FILES_FULL) $(DOCKER_COMPOSE_FILES_OBSERVABILITY) $(DOCKER_COMPOSE_FILES_EXTRAS)
+# Default: full demo + extras stub
+DOCKER_COMPOSE_FILES=$(DOCKER_COMPOSE_FILES_FULL) $(DOCKER_COMPOSE_FILES_EXTRAS)
 
 # Accept either `service=` or `SERVICE=` for single-service targets (build, restart, redeploy).
 # Must be evaluated at file scope; an `ifdef SERVICE` block inside a recipe is a shell command,
@@ -40,9 +37,6 @@ service := $(SERVICE)
 endif
 
 
-# see https://github.com/open-telemetry/build-tools/releases for semconvgen updates
-# Keep links in semantic_conventions/README.md and .vscode/settings.json in sync!
-SEMCONVGEN_VERSION=0.11.0
 YAMLLINT_VERSION=1.30.0
 
 # Changelog fragment tooling (chloggen). Pinned to match the OpenTelemetry
@@ -181,13 +175,6 @@ else
 	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) build
 endif
 
-# Build all services including the agentic layer (agent, mcp, chatbot).
-# Used by the agentic CI workflow so those images are present when
-# make run-telemetry-tests-agentic loads them from the artifact.
-.PHONY: build-agentic
-build-agentic:
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) $(DOCKER_COMPOSE_FILES_AGENT) build
-
 .PHONY: build-and-push
 build-and-push:
 	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) build --push
@@ -217,7 +204,7 @@ build-multiplatform-and-push:
 
 .PHONY: clean-images
 clean-images:
-	$(DOCKER_CMD) rmi $(shell $(DOCKER_CMD) images --filter=reference="ghcr.io/open-telemetry/demo:latest-*" -q); \
+	$(DOCKER_CMD) rmi $(shell $(DOCKER_CMD) images --filter=reference="ghcr.io/bronto-community/notel-demo:latest-*" -q); \
     if [ $$? -ne 0 ]; \
     then \
     	echo; \
@@ -229,62 +216,6 @@ clean-images:
 .PHONY: run-frontend-tests
 run-frontend-tests:
 	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) $(DOCKER_COMPOSE_FILES_TESTS) run frontendTests
-
-.PHONY: run-telemetry-tests
-run-telemetry-tests: start
-	$(DOCKER_CMD) build -t opentelemetry-demo-telemetry-tests ./test/telemetry
-	@touch .env.override
-	@# Capture test exit code, always tear down the demo, then propagate the code.
-	@set +e; \
-	$(DOCKER_CMD) run --rm --network opentelemetry-demo \
-		--env-file .env --env-file .env.override \
-		-e TEST_SCOPE=full \
-		-e WARMUP_SECONDS=$${WARMUP_SECONDS:-240} \
-		-e POLL_TIMEOUT=$${POLL_TIMEOUT:-180} \
-		-e WARMUP_PROBE_ENABLED=$${WARMUP_PROBE_ENABLED:-true} \
-		-e WARMUP_PROBE_CHECKOUTS=$${WARMUP_PROBE_CHECKOUTS:-5} \
-		-e WARMUP_PROBE_TIMEOUT=$${WARMUP_PROBE_TIMEOUT:-120} \
-		opentelemetry-demo-telemetry-tests; \
-	rc=$$?; \
-	$(MAKE) stop; \
-	exit $$rc
-
-.PHONY: run-telemetry-tests-minimal
-run-telemetry-tests-minimal: start-minimal
-	$(DOCKER_CMD) build -t opentelemetry-demo-telemetry-tests ./test/telemetry
-	@touch .env.override
-	@set +e; \
-	$(DOCKER_CMD) run --rm --network opentelemetry-demo \
-		--env-file .env --env-file .env.override \
-		-e TEST_SCOPE=minimal \
-		-e WARMUP_SECONDS=$${WARMUP_SECONDS:-240} \
-		-e POLL_TIMEOUT=$${POLL_TIMEOUT:-180} \
-		-e WARMUP_PROBE_ENABLED=$${WARMUP_PROBE_ENABLED:-true} \
-		-e WARMUP_PROBE_CHECKOUTS=$${WARMUP_PROBE_CHECKOUTS:-5} \
-		-e WARMUP_PROBE_TIMEOUT=$${WARMUP_PROBE_TIMEOUT:-120} \
-		opentelemetry-demo-telemetry-tests; \
-	rc=$$?; \
-	$(MAKE) stop; \
-	exit $$rc
-
-.PHONY: run-telemetry-tests-agentic
-run-telemetry-tests-agentic:
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) $(DOCKER_COMPOSE_FILES_AGENT) up --force-recreate --remove-orphans --detach
-	$(DOCKER_CMD) build -t opentelemetry-demo-telemetry-tests ./test/telemetry
-	@touch .env.override
-	@set +e; \
-	$(DOCKER_CMD) run --rm --network opentelemetry-demo \
-		--env-file .env --env-file .env.override \
-		-e TEST_SCOPE=agentic \
-		-e WARMUP_SECONDS=$${WARMUP_SECONDS:-240} \
-		-e POLL_TIMEOUT=$${POLL_TIMEOUT:-180} \
-		-e WARMUP_PROBE_ENABLED=false \
-		-e WARMUP_PROBE_CHECKOUTS=0 \
-		-e WARMUP_PROBE_TIMEOUT=$${WARMUP_PROBE_TIMEOUT:-120} \
-		opentelemetry-demo-telemetry-tests; \
-	rc=$$?; \
-	$(MAKE) stop; \
-	exit $$rc
 
 .PHONY: generate-protobuf
 generate-protobuf:
@@ -316,55 +247,17 @@ start:
 	@echo ""
 	@echo "OpenTelemetry Demo is running."
 	@echo "Go to http://localhost:8080 for the demo UI."
-	@echo "Go to http://localhost:8080/jaeger/ui for the Jaeger UI."
-	@echo "Go to http://localhost:8080/grafana/ for the Grafana UI."
 	@echo "Go to http://localhost:8080/loadgen/ for the Load Generator UI."
 	@echo "Go to http://localhost:8080/feature/ to change feature flags."
-	@echo "Go to http://localhost:8080/telemetry/ for the Weaver generated telemetry documentation."
 
 .PHONY: start-minimal
 start-minimal:
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES_CORE) $(DOCKER_COMPOSE_FILES_OBSERVABILITY) $(DOCKER_COMPOSE_FILES_EXTRAS) up --force-recreate --remove-orphans --detach
+	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES_CORE) $(DOCKER_COMPOSE_FILES_EXTRAS) up --force-recreate --remove-orphans --detach
 	@echo ""
 	@echo "OpenTelemetry Demo in minimal mode is running."
 	@echo "Go to http://localhost:8080 for the demo UI."
-	@echo "Go to http://localhost:8080/jaeger/ui for the Jaeger UI."
-	@echo "Go to http://localhost:8080/grafana/ for the Grafana UI."
 	@echo "Go to http://localhost:8080/loadgen/ for the Load Generator UI."
 	@echo "Go to http://localhost:8080/feature/ to change feature flags."
-	@echo "Go to http://localhost:8080/telemetry/ for the Weaver generated telemetry documentation."
-
-.PHONY: start-no-o11y
-start-no-o11y:
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES_FULL) $(DOCKER_COMPOSE_FILES_EXTRAS) up --force-recreate --remove-orphans --detach
-	@echo ""
-	@echo "OpenTelemetry Demo is running (no observability stack)."
-	@echo "Go to http://localhost:8080 for the demo UI."
-	@echo "Go to http://localhost:8080/loadgen/ for the Load Generator UI."
-	@echo "Go to http://localhost:8080/feature/ to change feature flags."
-	@echo "Go to http://localhost:8080/telemetry/ for the Weaver generated telemetry documentation."
-
-.PHONY: start-minimal-no-o11y
-start-minimal-no-o11y:
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES_CORE) $(DOCKER_COMPOSE_FILES_EXTRAS) up --force-recreate --remove-orphans --detach
-	@echo ""
-	@echo "OpenTelemetry Demo in minimal mode is running (no observability stack)."
-	@echo "Go to http://localhost:8080 for the demo UI."
-	@echo "Go to http://localhost:8080/loadgen/ for the Load Generator UI."
-	@echo "Go to http://localhost:8080/feature/ to change feature flags."
-	@echo "Go to http://localhost:8080/telemetry/ for the Weaver generated telemetry documentation."
-
-.PHONY: start-profiling
-start-profiling:
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES_FULL) $(DOCKER_COMPOSE_FILES_OBSERVABILITY) $(DOCKER_COMPOSE_FILES_PROFILING) $(DOCKER_COMPOSE_FILES_EXTRAS) up --force-recreate --remove-orphans --detach
-	@echo ""
-	@echo "OpenTelemetry Demo in profiling mode is running."
-	@echo "Go to http://localhost:8080 for the demo UI."
-	@echo "Go to http://localhost:8080/jaeger/ui for the Jaeger UI."
-	@echo "Go to http://localhost:8080/grafana/ for the Grafana UI."
-	@echo "Go to http://localhost:8080/loadgen/ for the Load Generator UI."
-	@echo "Go to http://localhost:8080/profiles/ for the Firepit UI."
-	@echo "Go to http://localhost:8080/telemetry/ for the Weaver generated telemetry documentation."
 
 .PHONY: start-agentic
 start-agentic:
@@ -372,18 +265,14 @@ start-agentic:
 	@echo ""
 	@echo "OpenTelemetry Demo with the agent, mcp and chatbot is running."
 	@echo "Go to http://localhost:8080 for the demo UI."
-	@echo "Go to http://localhost:8080/jaeger/ui for the Jaeger UI."
-	@echo "Go to http://localhost:8080/grafana/ for the Grafana UI."
 	@echo "Go to http://localhost:8080/loadgen/ for the Load Generator UI."
 	@echo "Go to http://localhost:8080/feature/ to change feature flags."
-	@echo "Go to http://localhost:8080/telemetry/ for the Weaver generated telemetry documentation."
 	@echo "Go to http://localhost:8080/chatbot/ for interacting with demo application using an agent."
 
 .PHONY: stop
 stop:
 	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) down --remove-orphans --volumes
 	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) $(DOCKER_COMPOSE_FILES_AGENT) down --remove-orphans --volumes
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) $(DOCKER_COMPOSE_FILES_PROFILING) down --remove-orphans --volumes
 	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) $(DOCKER_COMPOSE_FILES_TESTS) down --remove-orphans --volumes
 	@echo ""
 	@echo "OpenTelemetry Demo is stopped."

@@ -19,8 +19,61 @@ concurrency:
 
 jobs:
   analysis:
+    name: OSSF Scorecard analysis
+    runs-on: ubuntu-latest
     permissions:
+      actions: read  # for Scorecard and the SARIF upload on a non-public repository
+      checks: read  # for Scorecard on a non-public repository
       contents: read  # for actions/checkout
-      id-token: write  # for Scorecard to publish results
+      issues: read  # for Scorecard on a non-public repository
+      pull-requests: read  # for Scorecard on a non-public repository
       security-events: write  # for the SARIF upload to code scanning
-    uses: open-telemetry/shared-workflows/.github/workflows/scorecard.yml@ad1959372f2919fcf2556d3a3d12ed5265c54209  # v0.16.0
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run Scorecard
+        uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc  # v2.4.4
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          # api.scorecard.dev only accepts results for public repositories.
+          publish_results: false
+
+      - name: Keep only the checks that report findings
+        env:
+          INCLUDED_CHECKS: |
+            BinaryArtifactsID
+            DangerousWorkflowID
+            PinnedDependenciesID
+            TokenPermissionsID
+        run: |
+          set -euo pipefail
+          # Scorecard reports `uses: $/...` self-repository references as unpinned:
+          # https://github.com/ossf/scorecard/issues/5232
+          # The regex matches a snippet line that starts with `$/` after optional spaces.
+          jq --arg included "$INCLUDED_CHECKS" '
+            def self_repository_reference:
+              ((.ruleId // "") == "PinnedDependenciesID")
+              and any(
+                .locations[]?;
+                ((.physicalLocation.region.snippet.text // "") | any(split("\n")[]; test("^\\s*\\$/")))
+              );
+            ($included | split("\n") | map(select(length > 0))) as $keep
+            | .runs |= map(
+                .results = (
+                  (.results // [])
+                  | map(select(
+                      ((.ruleId // "") | IN($keep[]))
+                      and (self_repository_reference | not)
+                    ))
+                )
+              )
+          ' results.sarif > filtered.sarif
+
+      - name: Upload to code scanning
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2  # v4.38.2
+        with:
+          sarif_file: filtered.sarif

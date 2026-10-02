@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+blank_issues_enabled: false
+contact_links:
+  - name: Bug or feature request for the demo itself
+    url: https://github.com/open-telemetry/opentelemetry-demo/issues
+    about: >-
+      notel-demo is regenerated from the OpenTelemetry Demo. Report bugs and
+      feature requests for the demo upstream; fixes reach notel-demo with the
+      next sync.

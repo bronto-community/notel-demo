@@ -26,13 +26,10 @@ jobs:
       packages: write  # required to push built images to GHCR
     uses: $/.github/workflows/component-build-images.yml
     with:
-      push: ${{ github.event_name == 'push' }}
+      push: false
       force_build: ${{ github.event_name == 'push' }}
       # Use a non-release tag for PR builds; tags are not pushed when push=false.
       version: ${{ github.event_name == 'push' && 'main' || 'dev' }}
-    secrets:
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
   markdownlint:
     name: Markdown lint
@@ -143,26 +140,6 @@ jobs:
       - name: Validate changelog fragments
         run: make chlog-validate
 
-  weaver-check:
-    name: Weaver check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Run Weaver registry check
-        env:
-          GITHUB_WORKSPACE_PATH: ${{ github.workspace }}
-        run: |
-          # Reuse the Dependabot-tracked weaver pin from the telemetry-docs Dockerfile so this
-          # check never drifts from the version used to actually generate the docs.
-          WEAVER_IMAGE=$(grep -oP '(?<=^FROM )\S*otel/weaver\S*' src/telemetry-docs/Dockerfile)
-          docker run --rm \
-            --mount "type=bind,source=${GITHUB_WORKSPACE_PATH}/telemetry-schema,target=/home/weaver/source,readonly" \
-            "${WEAVER_IMAGE}" \
-            registry check -r source
-
   check-react-native-changes:
     name: Check React Native changes
     runs-on: ubuntu-latest
@@ -172,6 +149,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Check React Native paths
         uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
@@ -208,7 +186,6 @@ jobs:
       sanity,
       checklicense,
       changelog,
-      weaver-check,
       react-native-build,
       codeql-analysis
     ]

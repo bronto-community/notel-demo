@@ -27,7 +27,7 @@ const Footer = () => {
         </p>
       </div>
       <p>
-        @ {currentYear} OpenTelemetry (<a href="https://github.com/open-telemetry/opentelemetry-demo">Source Code</a>)
+        @ {currentYear} notel-demo (<a href="https://github.com/bronto-community/notel-demo">Source Code</a>), based on the OpenTelemetry Demo (<a href="https://github.com/open-telemetry/opentelemetry-demo">Source Code</a>)
       </p>
       <PlatformFlag />
     </S.Footer>

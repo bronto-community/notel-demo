@@ -6,7 +6,6 @@
 #
 # Usage (typical):
 #   docker compose -f compose.yaml -f compose.full.yaml \
-#                  -f compose.observability.yaml \
 #                  -f compose.agent.yaml \
 #                  -f compose.extras.yaml up
 
@@ -29,7 +28,6 @@ services:
     volumes:
       - ./src/agent/fixtures:/app/fixtures
     environment:
-      - TRACELOOP_BASE_URL
       - GRAPH_RECURSION_LIMIT
       - MCP_ENDPOINT
       - MCP_PORT
@@ -44,15 +42,9 @@ services:
       - VCR_MATCH_THRESHOLD
       - OPENAI_API_KEY=${API_KEY}
       - APPLICATION_ENDPOINT
-      - OTEL_EXPORTER_OTLP_INSECURE=true
-      - OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES},service.criticality=low
-      - OTEL_SERVICE_NAME=agent
       - FLAGD_HOST
       - FLAGD_PORT
-      - OTEL_PYTHON_SDK_INTERNAL_METRICS_ENABLED=true
     depends_on:
-      otel-collector:
-        condition: service_started
       product-catalog:
         condition: service_started
       mcp:
@@ -80,14 +72,9 @@ services:
     ports:
       - "${MCP_PORT}"
     environment:
-      - TRACELOOP_BASE_URL
       - MCP_ENDPOINT
       - MCP_PORT
-      - OTEL_EXPORTER_OTLP_INSECURE=true
       - APPLICATION_ENDPOINT
-      - OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES},service.criticality=low
-      - OTEL_SERVICE_NAME=mcp
-      - OTEL_PYTHON_SDK_INTERNAL_METRICS_ENABLED=true
     depends_on:
       frontend:
         condition: service_started
@@ -116,18 +103,9 @@ services:
       - AGENT_ENDPOINT
       - CHATBOT_PORT
       - CHATBOT_ROOT_PATH
-      - OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES},service.criticality=low
-      - OTEL_SERVICE_NAME=chatbot
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://${OTEL_COLLECTOR_HOST}:${OTEL_COLLECTOR_PORT_HTTP}
-      - OTEL_EXPORTER_OTLP_INSECURE=true
-      - OTEL_PYTHON_SDK_INTERNAL_METRICS_ENABLED=true
-      - OPAMP_SERVER_ENDPOINT=https://${OPAMP_SERVER_HOST}:4320/v1/opamp
-      - OPAMP_SERVER_TLS_INSECURE_SKIP_VERIFY=true
     depends_on:
       agent:
         condition: service_started
-      opamp-server:
-        condition: service_healthy
     logging:
       driver: "json-file"
       options:

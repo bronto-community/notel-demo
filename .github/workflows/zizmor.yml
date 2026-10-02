@@ -13,11 +13,25 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   zizmor:
+    name: Zizmor security analysis
+    runs-on: ubuntu-latest
     permissions:
+      actions: read  # for the SARIF upload on a non-public repository
       contents: read  # for actions/checkout
       security-events: write  # for zizmor to upload SARIF results
-    uses: open-telemetry/shared-workflows/.github/workflows/zizmor.yml@ad1959372f2919fcf2556d3a3d12ed5265c54209  # v0.16.0
-    with:
-      persona: pedantic
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run zizmor
+        uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482  # v0.6.4
+        with:
+          persona: pedantic
