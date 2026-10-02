@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+# Verification-only overlay. Never part of the shipped demo.
+# Stands in for every hostname an observability exporter could target and
+# records any connection attempt. See notel/verify/README.md.
+services:
+  notel-canary:
+    image: python:3.12-alpine
+    container_name: notel-canary
+    command: ["python", "-u", "/canary.py"]
+    volumes:
+      - ./notel/verify/canary.py:/canary.py:ro
+    networks:
+      default:
+        aliases:
+          - otel-collector
+          - otelcol
+          - jaeger
+          - prometheus
+          - grafana
+          - opensearch
+          - opamp-server
+          - tempo
+          - zipkin

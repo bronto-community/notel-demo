@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+# Helm 4 post-renderer plugin. Install with
+#   helm plugin install notel/k8s/post-render
+# and pass --post-renderer notel-strip. Helm 3 takes the script directly:
+#   --post-renderer notel/k8s/post-render/post-render.sh
+apiVersion: v1
+type: postrenderer/v1
+name: notel-strip
+version: 0.1.0
+runtime: subprocess
+runtimeConfig:
+  platformCommand:
+    - command: ${HELM_PLUGIN_DIR}/post-render.sh
